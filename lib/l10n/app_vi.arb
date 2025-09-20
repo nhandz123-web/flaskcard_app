@@ -1,0 +1,17 @@
+{
+  "@@locale": "vi",
+  "settings_title": "Cài đặt",
+  "font_size": "Cỡ chữ",
+  "theme": "Giao diện",
+  "language": "Ngôn ngữ",
+  "auto_play": "Tự phát âm trong màn Học",
+  "daily_reminder": "Nhắc hằng ngày",
+  "pick_time": "Chọn giờ",
+  "turn_off": "Tắt",
+  "study_play": "Phát lại",
+  "settings_hint": "Các cài đặt này lưu trên thiết bị (SharedPreferences). Bạn có thể đồng bộ lên server ở bước sau.",
+  "home": "Trang chủ",
+  "decks": "Bộ thẻ",
+  "learn": "Học tập",
+  "profile": "Hồ sơ"
+}

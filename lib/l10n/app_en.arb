@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "settings_title": "Settings",
+  "font_size": "Font size",
+  "theme": "Theme",
+  "language": "Language",
+  "auto_play": "Auto-play audio in Study",
+  "daily_reminder": "Daily reminder",
+  "pick_time": "Pick time",
+  "turn_off": "Turn off",
+  "study_play": "Play",
+  "settings_hint": "These settings are saved on device (SharedPreferences). You can sync to server later.",
+  "home": "Home",
+  "decks": "Decks",
+  "learn": "Learn",
+  "profile": "Profile"
+}
