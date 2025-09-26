@@ -40,17 +40,33 @@ class _SettingsPageState extends State<SettingsPage> {
               // Font size
               ListTile(
                 leading: const Icon(Icons.text_fields),
-                title: Text(t.font_size),
-                subtitle: Text('${(_settings.fontScale * 100).round()}%'),
+                title: Text(t.font_size), // t.font_size từ AppLocalizations
+                subtitle: Consumer<SettingsProvider>(
+                  builder: (context, settings, child) {
+                    return Text('${(settings.animatedFontScale * 100).round()}%');
+                  },
+                ),
                 contentPadding: EdgeInsets.zero,
                 trailing: SizedBox(
                   width: 180,
-                  child: Slider(
-                    value: _settings.fontScale,
-                    min: 0.85,
-                    max: 1.40,
-                    divisions: 11,
-                    onChanged: (v) => _settings.setFontScale(v),
+                  child: Consumer<SettingsProvider>(
+                    builder: (context, settings, child) {
+                      return TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 1), // Thời gian animation
+                        tween: Tween<double>(begin: settings.fontScale, end: settings.animatedFontScale),
+                        builder: (context, value, child) {
+                          return Slider(
+                            value: value,
+                            min: 0.85,
+                            max: 1.40,
+                            divisions: 11,
+                            onChanged: (newValue) {
+                              settings.setFontScale(newValue); // Cập nhật giá trị
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
@@ -94,14 +110,25 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionCard(
             title: 'Study',
             children: [
-              ListTile(
-                leading: const Icon(Icons.volume_up),
-                title: Text(t.auto_play),
-                contentPadding: EdgeInsets.zero,
-                trailing: Switch(
-                  value: _settings.autoPlayAudio,
-                  onChanged: (v) => _settings.setAutoPlay(v),
-                ),
+              Consumer<SettingsProvider>(
+                builder: (context, settings, child) {
+                  return ListTile(
+                    leading: const Icon(Icons.volume_up),
+                    title: Text(t.auto_play),
+                    contentPadding: EdgeInsets.zero,
+                    trailing: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return ScaleTransition(scale: animation, child: child);
+                      },
+                      child: Switch(
+                        key: ValueKey(settings.animatedAutoPlay),
+                        value: settings.animatedAutoPlay,
+                        onChanged: (v) => settings.setAutoPlay(v),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
