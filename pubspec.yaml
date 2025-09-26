@@ -45,6 +45,10 @@ dependencies:
   just_audio: ^0.9.40
   audio_session: ^0.1.21
   provider: ^6.1.2
+  #sprint 2:
+  image_picker: ^1.0.4  # Để pick ảnh từ gallery/camera
+  cached_network_image: ^3.3.0  # Để hiển thị ảnh từ URL với cache và placeholder
+  skeletonizer: ^1.4.0  # Để làm skeleton loading (optional, nhưng tiện cho S2-07)
 
   flutter_localizations:
     sdk: flutter
