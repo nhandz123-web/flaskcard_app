@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.api});
@@ -28,15 +30,21 @@ class _LoginPageState extends State<LoginPage> {
     if (!_form.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      // gọi API login (đã tự lưu access + refresh token trong TokenStore)
-      await widget.api.login(
-        _email.text.trim(),
-        _pass.text,
-      );
+      // Gọi API login và lưu token
+      await widget.api.login(_email.text.trim(), _pass.text);
+      print('Login successful, token saved');
 
-      // điều hướng sang Settings (hoặc Home nếu muốn)
-      if (mounted) context.replaceNamed('home');
+      // Cập nhật UserProvider sau khi login
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.loadUser();
+      print('UserId after login: ${userProvider.userId}');
+
+      // Điều hướng thủ công đến /home
+      if (mounted) {
+        context.go('/home');
+      }
     } catch (e) {
+      print('Lỗi đăng nhập: $e'); // Debug log
       _showErr(_friendly(e));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -53,6 +61,7 @@ class _LoginPageState extends State<LoginPage> {
     final s = e.toString();
     if (s.contains('401')) return 'Email hoặc mật khẩu không đúng';
     if (s.contains('422')) return 'Dữ liệu không hợp lệ';
+    if (s.contains('500')) return 'Lỗi server, vui lòng thử lại sau';
     return 'Đã có lỗi xảy ra. Vui lòng thử lại.';
   }
 

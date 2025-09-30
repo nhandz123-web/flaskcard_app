@@ -4,25 +4,40 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class TokenStore extends ChangeNotifier {
   final _s = const FlutterSecureStorage();
   static const _key = 'access_token';
-  String? _token; // cache trong RAM
+  String? _token; // Cache trong RAM
 
-  Future<void> init() async {
-    _token = await _s.read(key: _key);
+  TokenStore() {
+    _init(); // Gọi init() ngay khi khởi tạo
   }
 
-  String? get token => _token;           // getter ĐỒNG BỘ (dùng cho redirect)
-  Future<String?> getAsync() async => _token ?? await _s.read(key: _key);
-  Future<String?> get() => getAsync();   // alias để code cũ không lỗi
+  Future<void> _init() async {
+    _token = await _s.read(key: _key);
+    print('Token initialized: $_token'); // Debug log
+    notifyListeners(); // Cập nhật khi token được tải
+  }
+
+  // Getter bất đồng bộ, ưu tiên dùng trong ApiService
+  Future<String?> getToken() async {
+    if (_token == null) {
+      await _init(); // Tải lại nếu cache rỗng
+    }
+    return _token ?? await _s.read(key: _key);
+  }
+
+  // Getter đồng bộ cho redirect (nếu cần, nhưng không khuyến khích)
+  String? get token => _token;
 
   Future<void> save(String token) async {
     _token = token;
     await _s.write(key: _key, value: token);
-    notifyListeners(); // cho GoRouter refresh an toàn
+    print('Token saved: $token'); // Debug log
+    notifyListeners(); // Cập nhật cho GoRouter
   }
 
   Future<void> clear() async {
     _token = null;
     await _s.delete(key: _key);
+    print('Token cleared'); // Debug log
     notifyListeners();
   }
 }

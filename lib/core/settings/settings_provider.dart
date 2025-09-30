@@ -8,6 +8,7 @@ class SettingsProvider with ChangeNotifier {
   Locale _locale = const Locale('vi');
   bool _autoPlayAudio = false;
   bool _animatedAutoPlay = false; // Cho nút tự phát
+  String _lastKnownRoute = '/home'; // Thêm biến lưu route hiện tại
 
   double get fontScale => _fontScale;
   double get animatedFontScale => _animatedFontScale;
@@ -15,6 +16,7 @@ class SettingsProvider with ChangeNotifier {
   Locale get locale => _locale;
   bool get autoPlayAudio => _autoPlayAudio;
   bool get animatedAutoPlay => _animatedAutoPlay;
+  String get lastKnownRoute => _lastKnownRoute;
 
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
@@ -24,14 +26,15 @@ class SettingsProvider with ChangeNotifier {
     _locale = Locale(sp.getString('locale') ?? 'vi');
     _autoPlayAudio = sp.getBool('autoPlayAudio') ?? false;
     _animatedAutoPlay = _autoPlayAudio; // Đồng bộ ban đầu
-    notifyListeners();
+    _lastKnownRoute = sp.getString('lastKnownRoute') ?? '/home'; // Load route cuối cùng
+    notifyListeners(); // Chỉ gọi khi load ban đầu
   }
 
   Future<void> _save(void Function(SharedPreferences) edit) async {
     final sp = await SharedPreferences.getInstance();
     edit(sp);
     await Future.delayed(const Duration(milliseconds: 100)); // Delay để tránh issue
-    notifyListeners();
+    // Không gọi notifyListeners() ở đây
   }
 
   void setFontScale(double v) {
@@ -40,6 +43,7 @@ class SettingsProvider with ChangeNotifier {
       _fontScale = newValue;
       _animatedFontScale = newValue;
       _save((sp) => sp.setDouble('fontScale', _fontScale));
+      notifyListeners(); // Gọi để cập nhật giao diện ngay
     }
   }
 
@@ -47,6 +51,7 @@ class SettingsProvider with ChangeNotifier {
     if (m != _themeMode) {
       _themeMode = m;
       _save((sp) => sp.setInt('themeMode', m.index));
+      notifyListeners(); // Gọi để cập nhật theme ngay
     }
   }
 
@@ -54,6 +59,7 @@ class SettingsProvider with ChangeNotifier {
     if (l != _locale) {
       _locale = l;
       _save((sp) => sp.setString('locale', l.languageCode));
+      // Không gọi notifyListeners() để tránh rebuild toàn cục
     }
   }
 
@@ -62,6 +68,15 @@ class SettingsProvider with ChangeNotifier {
       _autoPlayAudio = v;
       _animatedAutoPlay = v; // Cập nhật giá trị animation
       _save((sp) => sp.setBool('autoPlayAudio', v));
+      notifyListeners(); // Gọi để cập nhật giao diện ngay
+    }
+  }
+
+  void setLastKnownRoute(String route) {
+    if (route != _lastKnownRoute) {
+      _lastKnownRoute = route;
+      _save((sp) => sp.setString('lastKnownRoute', route));
+      // Không gọi notifyListeners() vì chỉ cần lưu trạng thái
     }
   }
 }

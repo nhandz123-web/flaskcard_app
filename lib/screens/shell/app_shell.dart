@@ -26,7 +26,7 @@ class AppShell extends StatelessWidget {
           NavigationDestination(
               icon: const Icon(Icons.collections_bookmark_outlined),
               selectedIcon: const Icon(Icons.collections_bookmark),
-              label: l10n.decks),
+              label: l10n.deck),
           NavigationDestination(
               icon: const Icon(Icons.school_outlined),
               selectedIcon: const Icon(Icons.school),

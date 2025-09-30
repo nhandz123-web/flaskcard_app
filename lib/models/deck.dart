@@ -1,17 +1,37 @@
-// lib/models/deck.dart
 class Deck {
   final int id;
-  final String title;
+  final int userId;
+  final String name;
   final String description;
-  final bool isPublic;
-  final int cardsCount;
-  final int ownerId;  // Để check owner
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
-  Deck.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
-        title = json['title'],
-        description = json['description'] ?? '',
-        isPublic = json['is_public'] ?? false,
-        cardsCount = json['cards_count'] ?? 0,
-        ownerId = json['owner_id'];
+  Deck({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.description,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Deck.fromJson(Map<String, dynamic> json) {
+    return Deck(
+      id: json['id'] as int? ?? 0, // Sử dụng 0 nếu id là null
+      userId: json['user_id'] as int? ?? 0, // Sử dụng 0 nếu user_id là null
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'user_id': userId,
+    'name': name,
+    'description': description,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 }

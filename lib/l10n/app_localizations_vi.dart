@@ -9,6 +9,9 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get lexiFlash => 'LexiFlash';
+
+  @override
   String get settings_title => 'Cài đặt';
 
   @override
@@ -42,11 +45,128 @@ class AppLocalizationsVi extends AppLocalizations {
   String get home => 'Trang chủ';
 
   @override
-  String get decks => 'Bộ thẻ';
+  String get deck => 'Bộ thẻ';
 
   @override
   String get learn => 'Học tập';
 
   @override
   String get profile => 'Hồ sơ';
+
+  @override
+  String get createNewDeck => 'Tạo Bộ Thẻ Mới';
+
+  @override
+  String get deckName => 'Tên bộ thẻ';
+
+  @override
+  String get description => 'Mô tả';
+
+  @override
+  String get save => 'Lưu';
+
+  @override
+  String get deckCreatedSuccess => 'Tạo bộ thẻ thành công!';
+
+  @override
+  String get error => 'Lỗi';
+
+  @override
+  String get noDecks => 'Không có bộ thẻ nào';
+
+  @override
+  String get createdDate => 'Ngày tạo: ';
+
+  @override
+  String get deckNameRequired => 'deckNameRequired';
+
+  @override
+  String get settings => 'Cài đặt';
+
+  @override
+  String get deckDeleted => 'Đã xóa bộ thẻ thành công';
+
+  @override
+  String get deckUpdated => 'Đã cập nhật bộ thẻ thành công';
+
+  @override
+  String get cardAdded => 'Đã thêm thẻ thành công';
+
+  @override
+  String get editDeck => 'Chỉnh sửa bộ thẻ';
+
+  @override
+  String get addCard => 'Thêm thẻ';
+
+  @override
+  String get name => 'Tên';
+
+  @override
+  String get front => 'Mặt trước';
+
+  @override
+  String get back => 'Mặt sau';
+
+  @override
+  String get note => 'Ghi chú';
+
+  @override
+  String get appName => 'Flashcard';
+
+  @override
+  String get login => 'Đăng nhập';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Mật khẩu';
+
+  @override
+  String get loginButton => 'Đăng nhập';
+
+  @override
+  String get signup => 'Đăng ký';
+
+  @override
+  String get signupButton => 'Đăng ký';
+
+  @override
+  String get logout => 'Đăng xuất';
+
+  @override
+  String get fontSize => 'Cỡ chữ';
+
+  @override
+  String get darkMode => 'Chế độ tối';
+
+  @override
+  String get lightMode => 'Chế độ sáng';
+
+  @override
+  String get systemDefault => 'Mặc định hệ thống';
+
+  @override
+  String get englishWord => 'Từ vựng tiếng Anh';
+
+  @override
+  String get meaning => 'Nghĩa';
+
+  @override
+  String get phonetic => 'Phiên âm';
+
+  @override
+  String get uploadImage => 'Tải hình ảnh lên';
+
+  @override
+  String get uploadAudio => 'Tải âm thanh lên';
+
+  @override
+  String get cardCreated => 'Thêm thẻ thành công';
+
+  @override
+  String get englishWordRequired => 'Từ vựng tiếng Anh là bắt buộc';
+
+  @override
+  String get meaningRequired => 'Nghĩa là bắt buộc';
 }

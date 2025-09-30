@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get lexiFlash => '⚡ LexiFlash';
+
+  @override
   String get settings_title => 'Settings';
 
   @override
@@ -42,11 +45,128 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
-  String get decks => 'Decks';
+  String get deck => 'Decks';
 
   @override
   String get learn => 'Learn';
 
   @override
   String get profile => 'Profile';
+
+  @override
+  String get createNewDeck => 'Create New Deck';
+
+  @override
+  String get deckName => 'Deck Name';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get deckCreatedSuccess => 'Deck created successfully!';
+
+  @override
+  String get error => 'Error';
+
+  @override
+  String get noDecks => 'No decks available';
+
+  @override
+  String get createdDate => 'Created Date';
+
+  @override
+  String get deckNameRequired => 'deckNameRequired';
+
+  @override
+  String get settings => 'settings';
+
+  @override
+  String get deckDeleted => 'Deck deleted successfully';
+
+  @override
+  String get deckUpdated => 'Deck updated successfully';
+
+  @override
+  String get cardAdded => 'Card added successfully';
+
+  @override
+  String get editDeck => 'Edit Deck';
+
+  @override
+  String get addCard => 'Add Card';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get front => 'Front';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get note => 'Note';
+
+  @override
+  String get appName => 'Flashcard';
+
+  @override
+  String get login => 'Login';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get loginButton => 'Login';
+
+  @override
+  String get signup => 'Sign Up';
+
+  @override
+  String get signupButton => 'Sign Up';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get fontSize => 'Font Size';
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get lightMode => 'Light Mode';
+
+  @override
+  String get systemDefault => 'System Default';
+
+  @override
+  String get englishWord => 'English Word';
+
+  @override
+  String get meaning => 'Meaning';
+
+  @override
+  String get phonetic => 'Phonetic';
+
+  @override
+  String get uploadImage => 'Upload Image';
+
+  @override
+  String get uploadAudio => 'Upload Audio';
+
+  @override
+  String get cardCreated => 'Card created successfully';
+
+  @override
+  String get englishWordRequired => 'English word is required';
+
+  @override
+  String get meaningRequired => 'Meaning is required';
 }

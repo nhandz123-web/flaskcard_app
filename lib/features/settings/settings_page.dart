@@ -29,148 +29,144 @@ class _SettingsPageState extends State<SettingsPage> {
     final spFuture = SharedPreferences.getInstance();
     print('Building SettingsPage with locale=${t.localeName}');
 
-    return Scaffold(
-      appBar: AppBar(title: Text(t.settings_title)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: [
-          _SectionCard(
-            title: t.settings_title,
-            children: [
-              // Font size
-              ListTile(
-                leading: const Icon(Icons.text_fields),
-                title: Text(t.font_size), // t.font_size từ AppLocalizations
-                subtitle: Consumer<SettingsProvider>(
-                  builder: (context, settings, child) {
-                    return Text('${(settings.animatedFontScale * 100).round()}%');
-                  },
-                ),
-                contentPadding: EdgeInsets.zero,
-                trailing: SizedBox(
-                  width: 180,
-                  child: Consumer<SettingsProvider>(
-                    builder: (context, settings, child) {
-                      return TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 1), // Thời gian animation
-                        tween: Tween<double>(begin: settings.fontScale, end: settings.animatedFontScale),
-                        builder: (context, value, child) {
-                          return Slider(
-                            value: value,
-                            min: 0.85,
-                            max: 1.40,
-                            divisions: 11,
-                            onChanged: (newValue) {
-                              settings.setFontScale(newValue); // Cập nhật giá trị
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const Divider(height: 12),
-              // Theme mode
-              ListTile(
-                leading: const Icon(Icons.brightness_6),
-                title: Text(t.theme),
-                contentPadding: EdgeInsets.zero,
-                subtitle: DropdownButton<ThemeMode>(
-                  value: _settings.themeMode,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
-                  ],
-                  onChanged: (m) => m != null ? _settings.setThemeMode(m) : null,
-                ),
-              ),
-              const Divider(height: 12),
-              // Language
-              ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(t.language),
-                contentPadding: EdgeInsets.zero,
-                subtitle: DropdownButton<String>(
-                  value: _settings.locale.languageCode,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt')),
-                    DropdownMenuItem(value: 'en', child: Text('English')),
-                  ],
-                  onChanged: (code) => code != null ? _settings.setLocale(Locale(code)) : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Study section
-          _SectionCard(
-            title: 'Study',
-            children: [
-              Consumer<SettingsProvider>(
-                builder: (context, settings, child) {
-                  return ListTile(
-                    leading: const Icon(Icons.volume_up),
-                    title: Text(t.auto_play),
-                    contentPadding: EdgeInsets.zero,
-                    trailing: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      transitionBuilder: (Widget child, Animation<double> animation) {
-                        return ScaleTransition(scale: animation, child: child);
-                      },
-                      child: Switch(
-                        key: ValueKey(settings.animatedAutoPlay),
-                        value: settings.animatedAutoPlay,
-                        onChanged: (v) => settings.setAutoPlay(v),
+    return Localizations.override(
+      context: context,
+      locale: _settings.locale,
+      child: Builder(
+        builder: (context) {
+          final t = AppLocalizations.of(context)!;
+          return Scaffold(
+            appBar: AppBar(title: Text(t.settings_title)),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                _SectionCard(
+                  title: t.settings_title,
+                  children: [
+                    // Font size
+                    ListTile(
+                      leading: const Icon(Icons.text_fields),
+                      title: Text(t.font_size),
+                      subtitle: Text('${(_settings.animatedFontScale * 100).round()}%'),
+                      contentPadding: EdgeInsets.zero,
+                      trailing: SizedBox(
+                        width: 180,
+                        child: Slider(
+                          value: _settings.fontScale,
+                          min: 0.85,
+                          max: 1.40,
+                          divisions: 11,
+                          onChanged: (newValue) {
+                            _settings.setFontScale(newValue);
+                          },
+                        ),
                       ),
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Notifications section
-          _SectionCard(
-            title: t.daily_reminder,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.alarm),
-                title: Text(t.daily_reminder),
-                subtitle: FutureBuilder<SharedPreferences>(
-                  future: spFuture,
-                  builder: (ctx, snap) {
-                    if (!snap.hasData) return const Text('…');
-                    final val = snap.data!.getString('dailyReminder');
-                    return Text(val == null ? t.turn_off : '• $val');
-                  },
+                    const Divider(height: 12),
+                    // Theme mode
+                    ListTile(
+                      leading: const Icon(Icons.brightness_6),
+                      title: Text(t.theme),
+                      contentPadding: EdgeInsets.zero,
+                      subtitle: DropdownButton<ThemeMode>(
+                        value: _settings.themeMode,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
+                          DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+                          DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                        ],
+                        onChanged: (m) {
+                          if (m != null) {
+                            _settings.setThemeMode(m);
+                          }
+                        },
+                      ),
+                    ),
+                    const Divider(height: 12),
+                    // Language
+                    ListTile(
+                      leading: const Icon(Icons.language),
+                      title: Text(t.language),
+                      contentPadding: EdgeInsets.zero,
+                      subtitle: DropdownButton<String>(
+                        value: _settings.locale.languageCode,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt')),
+                          DropdownMenuItem(value: 'en', child: Text('English')),
+                        ],
+                        onChanged: (code) {
+                          if (code != null) {
+                            final newLocale = Locale(code);
+                            _settings.setLocale(newLocale);
+                            setState(() {});
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                trailing: FilledButton.tonal(
-                  onPressed: () => _pickDailyReminder(),
-                  child: Text(t.pick_time),
+                const SizedBox(height: 12),
+                // Study section
+                _SectionCard(
+                  title: 'Study',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.volume_up),
+                      title: Text(t.auto_play),
+                      contentPadding: EdgeInsets.zero,
+                      trailing: Switch(
+                        value: _settings.animatedAutoPlay,
+                        onChanged: (v) {
+                          _settings.setAutoPlay(v);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                contentPadding: EdgeInsets.zero,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => _turnOffDailyReminder(),
-                  label: Text(t.turn_off),
+                const SizedBox(height: 12),
+                // Notifications section
+                _SectionCard(
+                  title: t.daily_reminder,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.alarm),
+                      title: Text(t.daily_reminder),
+                      subtitle: FutureBuilder<SharedPreferences>(
+                        future: spFuture,
+                        builder: (ctx, snap) {
+                          if (!snap.hasData) return const Text('…');
+                          final val = snap.data!.getString('dailyReminder');
+                          return Text(val == null ? t.turn_off : '• $val');
+                        },
+                      ),
+                      trailing: FilledButton.tonal(
+                        onPressed: () => _pickDailyReminder(),
+                        child: Text(t.pick_time),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => _turnOffDailyReminder(),
+                        label: Text(t.turn_off),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Hint
-          Text(
-            t.settings_hint,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
+                const SizedBox(height: 12),
+                // Hint
+                Text(
+                  t.settings_hint,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

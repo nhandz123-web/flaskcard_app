@@ -95,6 +95,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @lexiFlash.
+  ///
+  /// In en, this message translates to:
+  /// **'⚡ LexiFlash'**
+  String get lexiFlash;
+
   /// No description provided for @settings_title.
   ///
   /// In en, this message translates to:
@@ -161,11 +167,11 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
-  /// No description provided for @decks.
+  /// No description provided for @deck.
   ///
   /// In en, this message translates to:
   /// **'Decks'**
-  String get decks;
+  String get deck;
 
   /// No description provided for @learn.
   ///
@@ -178,6 +184,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile'**
   String get profile;
+
+  /// No description provided for @createNewDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Deck'**
+  String get createNewDeck;
+
+  /// No description provided for @deckName.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck Name'**
+  String get deckName;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @deckCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck created successfully!'**
+  String get deckCreatedSuccess;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
+
+  /// No description provided for @noDecks.
+  ///
+  /// In en, this message translates to:
+  /// **'No decks available'**
+  String get noDecks;
+
+  /// No description provided for @createdDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created Date'**
+  String get createdDate;
+
+  /// No description provided for @deckNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'deckNameRequired'**
+  String get deckNameRequired;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'settings'**
+  String get settings;
+
+  /// No description provided for @deckDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck deleted successfully'**
+  String get deckDeleted;
+
+  /// No description provided for @deckUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck updated successfully'**
+  String get deckUpdated;
+
+  /// No description provided for @cardAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Card added successfully'**
+  String get cardAdded;
+
+  /// No description provided for @editDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Deck'**
+  String get editDeck;
+
+  /// No description provided for @addCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Card'**
+  String get addCard;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// No description provided for @front.
+  ///
+  /// In en, this message translates to:
+  /// **'Front'**
+  String get front;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get note;
+
+  /// No description provided for @appName.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcard'**
+  String get appName;
+
+  /// No description provided for @login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get loginButton;
+
+  /// No description provided for @signup.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signup;
+
+  /// No description provided for @signupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get signupButton;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// No description provided for @fontSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Font Size'**
+  String get fontSize;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// No description provided for @lightMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Light Mode'**
+  String get lightMode;
+
+  /// No description provided for @systemDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'System Default'**
+  String get systemDefault;
+
+  /// No description provided for @englishWord.
+  ///
+  /// In en, this message translates to:
+  /// **'English Word'**
+  String get englishWord;
+
+  /// No description provided for @meaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Meaning'**
+  String get meaning;
+
+  /// No description provided for @phonetic.
+  ///
+  /// In en, this message translates to:
+  /// **'Phonetic'**
+  String get phonetic;
+
+  /// No description provided for @uploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Image'**
+  String get uploadImage;
+
+  /// No description provided for @uploadAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Audio'**
+  String get uploadAudio;
+
+  /// No description provided for @cardCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Card created successfully'**
+  String get cardCreated;
+
+  /// No description provided for @englishWordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'English word is required'**
+  String get englishWordRequired;
+
+  /// No description provided for @meaningRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Meaning is required'**
+  String get meaningRequired;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
