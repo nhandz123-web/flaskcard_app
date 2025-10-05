@@ -26,6 +26,7 @@ class _DeckPageState extends State<DeckPage> {
   }
 
   void _refreshDecks() {
+    print('Refreshing decks');
     setState(() {
       _decksFuture = widget.api.getDecks();
     });
@@ -57,8 +58,8 @@ class _DeckPageState extends State<DeckPage> {
                     width: double.infinity,
                     color: Colors.red,
                     child: Text(
-                      AppLocalizations.of(context)!.lexiFlash,
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -75,7 +76,7 @@ class _DeckPageState extends State<DeckPage> {
                         if (snapshot.hasError) {
                           return Center(
                             child: Text(
-                              'Error: ${snapshot.error}',
+                              '${AppLocalizations.of(context)!.errorLoadingDecks ?? 'Error'}: ${snapshot.error}',
                               style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                             ),
                           );
@@ -83,7 +84,7 @@ class _DeckPageState extends State<DeckPage> {
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
                           return Center(
                             child: Text(
-                              AppLocalizations.of(context)!.noDecks,
+                              AppLocalizations.of(context)!.noDecks ?? 'No decks available',
                               style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                             ),
                           );
@@ -144,7 +145,15 @@ class _DeckPageState extends State<DeckPage> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                AppLocalizations.of(context)!.createdDate + ': ${deck.createdAt.toLocal().toString().split(' ')[0]}',
+                                                '${AppLocalizations.of(context)!.cards ?? 'Cards'}: ${deck.cardsCount}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${AppLocalizations.of(context)!.createdDate ?? 'Created'}: ${deck.createdAt.toLocal().toString().split(' ')[0]}',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -169,25 +178,25 @@ class _DeckPageState extends State<DeckPage> {
                                             }
                                           },
                                           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                            const PopupMenuItem<String>(
+                                            PopupMenuItem<String>(
                                               value: 'delete',
                                               child: ListTile(
-                                                leading: Icon(Icons.delete, size: 30),
-                                                title: Text('Delete'),
+                                                leading: const Icon(Icons.delete, size: 30),
+                                                title: Text(AppLocalizations.of(context)!.delete ?? 'Delete'),
                                               ),
                                             ),
-                                            const PopupMenuItem<String>(
+                                            PopupMenuItem<String>(
                                               value: 'edit',
                                               child: ListTile(
-                                                leading: Icon(Icons.edit, size: 30),
-                                                title: Text('Edit'),
+                                                leading: const Icon(Icons.edit, size: 30),
+                                                title: Text(AppLocalizations.of(context)!.edit ?? 'Edit'),
                                               ),
                                             ),
-                                            const PopupMenuItem<String>(
+                                            PopupMenuItem<String>(
                                               value: 'add_cards',
                                               child: ListTile(
-                                                leading: Icon(Icons.add_card, size: 30),
-                                                title: Text('Add Cards'),
+                                                leading: const Icon(Icons.add_card, size: 30),
+                                                title: Text(AppLocalizations.of(context)!.addCards ?? 'Add Cards'),
                                               ),
                                             ),
                                           ],
@@ -229,28 +238,28 @@ class _DeckPageState extends State<DeckPage> {
               children: [
                 _BottomNavItem(
                   icon: Icons.home,
-                  label: AppLocalizations.of(context)!.home,
+                  label: AppLocalizations.of(context)!.home ?? 'Home',
                   active: false,
                   onTap: () => context.go('/home'),
                   context: context,
                 ),
                 _BottomNavItem(
                   icon: Icons.library_books,
-                  label: AppLocalizations.of(context)!.deck,
+                  label: AppLocalizations.of(context)!.deck ?? 'Deck',
                   active: true,
                   onTap: () => context.go('/app/decks'),
                   context: context,
                 ),
                 _BottomNavItem(
                   icon: Icons.school,
-                  label: AppLocalizations.of(context)!.learn,
+                  label: AppLocalizations.of(context)!.learn ?? 'Learn',
                   active: false,
                   onTap: () => context.go('/app/learn'),
                   context: context,
                 ),
                 _BottomNavItem(
                   icon: Icons.account_circle,
-                  label: AppLocalizations.of(context)!.profile,
+                  label: AppLocalizations.of(context)!.profile ?? 'Profile',
                   active: false,
                   onTap: () => context.go('/app/profile'),
                   context: context,
@@ -267,12 +276,12 @@ class _DeckPageState extends State<DeckPage> {
     try {
       await context.read<ApiService>().deleteDeck(deckId);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deck deleted successfully')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.deckDeletedSuccessfully ?? 'Deck deleted successfully')),
       );
       _refreshDecks();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.errorDeletingDeck ?? 'Error'}: $e')),
       );
     }
   }
@@ -283,13 +292,17 @@ class _DeckPageState extends State<DeckPage> {
       context.go('/app/edit-deck/$deckId');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingDeck ?? 'Error'}: $e')),
       );
     }
   }
 
   Future<void> _handleAddCards(BuildContext context, int deckId) async {
-    context.go('/app/deck/$deckId/add-cards');
+    final result = await context.push('/app/deck/$deckId/add-cards', extra: {'api': widget.api});
+    if (result == true && mounted) {
+      print('Refreshing decks after adding cards');
+      _refreshDecks();
+    }
   }
 }
 
@@ -310,7 +323,7 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = Theme.of(context).iconTheme.size ?? 24; // Lấy kích thước từ theme, mặc định 24 nếu không có
+    final iconSize = Theme.of(context).iconTheme.size ?? 24;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -318,11 +331,13 @@ class _BottomNavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                color: active
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                size: iconSize),
+            Icon(
+              icon,
+              color: active
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              size: iconSize,
+            ),
             if (label.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -332,7 +347,7 @@ class _BottomNavItem extends StatelessWidget {
                     color: active
                         ? Theme.of(context).colorScheme.secondary
                         : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12, // Fix cứng cỡ chữ
+                    fontSize: 12,
                   ),
                 ),
               ),

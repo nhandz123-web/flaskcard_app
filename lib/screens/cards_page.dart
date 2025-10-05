@@ -53,10 +53,13 @@ class _CardsPageState extends State<CardsPage> {
   }
 
   void _refreshCards() {
-    print('Refreshing cards for deckId: ${widget.deckId}');
-    setState(() {
-      _cardsFuture = widget.api.getCards(widget.deckId);
-    });
+    print('Refreshing cards and deck for deckId: ${widget.deckId}');
+    if (mounted) {
+      setState(() {
+        _cardsFuture = widget.api.getCards(widget.deckId);
+        _deckFuture = _fetchDeck();
+      });
+    }
   }
 
   void _updateOwnerStatus(deck_model.Deck? deck) {
@@ -71,7 +74,7 @@ class _CardsPageState extends State<CardsPage> {
   Future<void> _playAudio(String? audioUrl) async {
     if (audioUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không có audio')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.noAudio ?? 'Không có audio')),
       );
       return;
     }
@@ -82,7 +85,7 @@ class _CardsPageState extends State<CardsPage> {
       await _audioPlayer.play(UrlSource(fullUrl));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi phát audio: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.errorPlayingAudio ?? 'Lỗi phát audio'}: $e')),
       );
     }
   }
@@ -122,16 +125,16 @@ class _CardsPageState extends State<CardsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.confirm ?? "Xác nhận"),
-        content: Text(AppLocalizations.of(context)!.confirmDeleteCard ?? "Bạn có chắc chắn muốn xoá card này?"),
+        title: Text(AppLocalizations.of(context)!.confirm ?? 'Xác nhận'),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteCard ?? 'Bạn có chắc chắn muốn xoá card này?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(context)!.cancel ?? "Hủy"),
+            child: Text(AppLocalizations.of(context)!.cancel ?? 'Hủy'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context)!.delete ?? "Xoá"),
+            child: Text(AppLocalizations.of(context)!.delete ?? 'Xoá'),
           ),
         ],
       ),
@@ -159,7 +162,7 @@ class _CardsPageState extends State<CardsPage> {
   }
 
   void _addCard() async {
-    final result = await context.push('/app/deck/${widget.deckId}/add-cards');
+    final result = await context.push('/app/deck/${widget.deckId}/add-cards', extra: {'api': widget.api});
     if (result == true && mounted) {
       print('Refreshing after add card...');
       _refreshCards();
@@ -191,7 +194,17 @@ class _CardsPageState extends State<CardsPage> {
             if (deckSnapshot.hasError) {
               return Center(
                 child: Text(
-                  'Error loading deck: ${deckSnapshot.error}',
+                  '${AppLocalizations.of(context)!.errorLoadingDeck ?? 'Error loading deck'}: ${deckSnapshot.error}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                ),
+              );
+            }
+
+            final deck = deckSnapshot.data ?? widget.deck;
+            if (deck == null) {
+              return Center(
+                child: Text(
+                  AppLocalizations.of(context)!.noDeckData ?? 'No deck data',
                   style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                 ),
               );
@@ -210,13 +223,31 @@ class _CardsPageState extends State<CardsPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           width: double.infinity,
                           color: Colors.red,
-                          child: Text(
-                            AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlask',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                deck.name.isNotEmpty ? deck.name : (AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Row(
+                                children: [
+
+                                  Text(
+                                    '${AppLocalizations.of(context)!.cards ?? 'Cards'}: ${deck.cardsCount}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                         Expanded(
@@ -229,7 +260,7 @@ class _CardsPageState extends State<CardsPage> {
                               if (snapshot.hasError) {
                                 return Center(
                                   child: Text(
-                                    'Error: ${snapshot.error}',
+                                    '${AppLocalizations.of(context)!.errorLoadingCards ?? 'Error loading cards'}: ${snapshot.error}',
                                     style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                                   ),
                                 );
@@ -298,8 +329,7 @@ class _CardsPageState extends State<CardsPage> {
                                                     ),
                                                     if (card.createdAt != null)
                                                       Text(
-                                                        AppLocalizations.of(context)!.createdDate +
-                                                            ': ${card.createdAt.toLocal().toString().split(' ')[0]}',
+                                                        '${AppLocalizations.of(context)!.createdDate ?? 'Created'}: ${card.createdAt!.toLocal().toString().split(' ')[0]}',
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),

@@ -96,6 +96,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get editDeck => 'Chỉnh sửa bộ thẻ';
 
   @override
+  String get cards => 'cards';
+
+  @override
   String get addCard => 'Thêm thẻ';
 
   @override
@@ -224,4 +227,42 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get removeAudio => 'removeAudio';
+
+  @override
+  String get noAudio => 'Không có audio';
+
+  @override
+  String get errorPlayingAudio => 'Lỗi phát audio';
+
+  @override
+  String get errorLoadingDeck => 'Error loading deck';
+
+  @override
+  String get errorLoadingCards => 'Lỗi khi tải thẻ';
+
+  @override
+  String get noDeckData => 'Chưa có thẻ ';
+
+  @override
+  String get cardCreatedSuccessfully => 'CThẻ đã được tạo thành công';
+
+  @override
+  String errorCreatingCard(Object error) {
+    return 'Error creating card: $error';
+  }
+
+  @override
+  String get debug => 'debug';
+
+  @override
+  String get errorLoadingDecks => 'Error loading Decks';
+
+  @override
+  String get addCards => 'addCards';
+
+  @override
+  String get deckDeletedSuccessfully => 'Deck deleted successfully';
+
+  @override
+  String get errorDeletingDeck => 'Error deleting deck';
 }

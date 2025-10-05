@@ -69,5 +69,11 @@
   "requiredField": "Trường này là bắt buộc",
   "imageUrl": "Đường dẫn hình ảnh",
   "audioUrl": "Đường dẫn âm thanh",
-  "example": "ví dụ"
+  "example": "ví dụ",
+  "noAudio" : "Không có audio",
+  "errorPlayingAudio" : "Lỗi phát audio",
+  "errorLoadingDeck": "Error loading deck",
+  "cardCreatedSuccessfully": "CThẻ đã được tạo thành công",
+  "errorLoadingCards": "Lỗi khi tải thẻ",
+  "noDeckData" :"Chưa có thẻ "
 }

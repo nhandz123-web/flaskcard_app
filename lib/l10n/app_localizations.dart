@@ -269,6 +269,12 @@ abstract class AppLocalizations {
   /// **'Edit Deck'**
   String get editDeck;
 
+  /// No description provided for @cards.
+  ///
+  /// In en, this message translates to:
+  /// **'cards'**
+  String get cards;
+
   /// No description provided for @addCard.
   ///
   /// In en, this message translates to:
@@ -520,6 +526,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'removeAudio'**
   String get removeAudio;
+
+  /// No description provided for @noAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'No audio'**
+  String get noAudio;
+
+  /// No description provided for @errorPlayingAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Error playing audio'**
+  String get errorPlayingAudio;
+
+  /// No description provided for @errorLoadingDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading deck'**
+  String get errorLoadingDeck;
+
+  /// No description provided for @errorLoadingCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading cards'**
+  String get errorLoadingCards;
+
+  /// No description provided for @noDeckData.
+  ///
+  /// In en, this message translates to:
+  /// **'No deck data'**
+  String get noDeckData;
+
+  /// No description provided for @cardCreatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Card created successfully'**
+  String get cardCreatedSuccessfully;
+
+  /// No description provided for @errorCreatingCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Error creating card: {error}'**
+  String errorCreatingCard(Object error);
+
+  /// No description provided for @debug.
+  ///
+  /// In en, this message translates to:
+  /// **'debug'**
+  String get debug;
+
+  /// No description provided for @errorLoadingDecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading Decks'**
+  String get errorLoadingDecks;
+
+  /// No description provided for @addCards.
+  ///
+  /// In en, this message translates to:
+  /// **'addCards'**
+  String get addCards;
+
+  /// No description provided for @deckDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck deleted successfully'**
+  String get deckDeletedSuccessfully;
+
+  /// No description provided for @errorDeletingDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting deck'**
+  String get errorDeletingDeck;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

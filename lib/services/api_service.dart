@@ -3,7 +3,6 @@ import 'token_store.dart';
 import 'dart:io';
 import 'package:flashcard_app/models/card.dart' as card_model;
 import 'package:flashcard_app/models/deck.dart' as deck_model;
-import 'package:http/http.dart' as http; // Thêm import http
 
 class ApiService {
   final TokenStore _tokenStore;
@@ -40,7 +39,7 @@ class ApiService {
     ));
   }
 
-  Future<String?> _getToken() async => await _tokenStore.getToken(); // Định nghĩa _getToken
+  Future<String?> _getToken() async => await _tokenStore.getToken();
 
   Future<String> login(String email, String password) async {
     try {
@@ -95,8 +94,17 @@ class ApiService {
   }
 
   Future<deck_model.Deck> getDeck(int deckId) async {
-    final response = await _dio.get('/api/decks/$deckId');
-    return deck_model.Deck.fromJson(response.data);
+    try {
+      final response = await _dio.get('/api/decks/$deckId');
+      if (response.statusCode == 200) {
+        return deck_model.Deck.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load deck: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Get deck error: $e');
+      throw e;
+    }
   }
 
   Future<Map<String, dynamic>> getCardsResponse(int deckId, {int page = 1}) async {
@@ -112,9 +120,10 @@ class ApiService {
   }
 
   Future<List<card_model.Card>> getCards(int deckId, {int page = 1}) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
     final response = await _dio.get(
       '/api/decks/$deckId/cards',
-      queryParameters: {'page': page, '_': DateTime.now().millisecondsSinceEpoch}, // Tránh caching
+      queryParameters: {'page': page, '_t': timestamp},
     );
     if (response.statusCode == 200) {
       return (response.data['data'] as List).map((e) => card_model.Card.fromJson(e)).toList();
@@ -122,8 +131,6 @@ class ApiService {
       throw Exception('Failed to load cards: ${response.statusCode}');
     }
   }
-
-
 
   Future<deck_model.Deck> createDeck(int userId, String name, String description) async {
     try {
@@ -136,7 +143,6 @@ class ApiService {
           'description': description,
         },
       );
-
       print('Raw response data: ${response.data}');
       if (response.statusCode == 201) {
         return deck_model.Deck.fromJson(response.data);
@@ -152,13 +158,25 @@ class ApiService {
     }
   }
 
-  Future<card_model.Card> createCard(int deckId, String front, String back, String? phonetic, String? example) async {
+  Future<card_model.Card> createCard(
+      int deckId,
+      String front,
+      String back,
+      String? phonetic,
+      String? example,
+      String? imageUrl,
+      String? audioUrl,
+      Map<String, dynamic>? extra,
+      ) async {
     try {
       final data = {
         'front': front,
         'back': back,
         'phonetic': phonetic,
         'example': example,
+        'image_url': imageUrl,
+        'audio_url': audioUrl,
+        'extra': extra,
       };
       final response = await _dio.post(
         '/api/decks/$deckId/cards',
@@ -167,7 +185,6 @@ class ApiService {
       if (response.statusCode != 201) {
         throw Exception('Failed to create card: ${response.statusCode}');
       }
-      // Cập nhật để lấy dữ liệu từ khóa 'card' thay vì 'data'
       final cardData = response.data['card'] as Map<String, dynamic>;
       if (cardData == null) {
         throw Exception('No card data in response: ${response.data}');
@@ -183,7 +200,11 @@ class ApiService {
     try {
       final response = await _dio.put('/api/decks/$deckId/cards/$cardId', data: data);
       if (response.statusCode == 200) {
-        return card_model.Card.fromJson(response.data);
+        final cardData = response.data['card'] as Map<String, dynamic>;
+        if (cardData == null) {
+          throw Exception('No card data in response: ${response.data}');
+        }
+        return card_model.Card.fromJson(cardData);
       } else {
         throw Exception('Failed to update card: ${response.statusCode}');
       }
@@ -193,11 +214,10 @@ class ApiService {
     }
   }
 
-
   Future<void> deleteCard(int deckId, int cardId) async {
     try {
       final response = await _dio.delete(
-        '/api/decks/$deckId/cards/$cardId', // Sử dụng cả deckId và cardId
+        '/api/decks/$deckId/cards/$cardId',
       );
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to delete card: ${response.statusCode}');
@@ -246,21 +266,30 @@ class ApiService {
   }
 
   Future<String> uploadCardImage(int cardId, File imageFile) async {
-    final formData = FormData.fromMap({
-      'image': await MultipartFile.fromFile(imageFile.path),
-    });
-    final response = await _dio.post('/api/cards/$cardId/upload-image', data: formData);
-    return response.data['image_url'] as String;
+    try {
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(imageFile.path),
+      });
+      final response = await _dio.post('/api/cards/$cardId/upload-image', data: formData);
+      if (response.statusCode == 200) {
+        return response.data['image_url'] as String;
+      } else {
+        throw Exception('Failed to upload image: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Upload image error: $e');
+      throw e;
+    }
   }
 
   Future<String> uploadCardAudio(int cardId, File audioFile) async {
     try {
       print('Sending audio upload request to: /api/cards/$cardId/audio');
       final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(audioFile.path), // Sử dụng 'file' như backend yêu cầu
+        'file': await MultipartFile.fromFile(audioFile.path),
       });
       final response = await _dio.post(
-        '/api/cards/$cardId/audio', // Thêm '/api' để khớp với route
+        '/api/cards/$cardId/audio',
         data: formData,
       );
       print('Audio upload response status: ${response.statusCode}');
@@ -268,7 +297,7 @@ class ApiService {
       if (response.statusCode != 200) {
         throw Exception('Failed to upload audio: ${response.statusCode}');
       }
-      return response.data['audio_url'] as String; // Trả về audio_url
+      return response.data['audio_url'] as String;
     } catch (e) {
       print('Upload audio error: $e');
       throw e;

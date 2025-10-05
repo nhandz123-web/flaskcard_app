@@ -96,6 +96,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editDeck => 'Edit Deck';
 
   @override
+  String get cards => 'cards';
+
+  @override
   String get addCard => 'Add Card';
 
   @override
@@ -224,4 +227,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeAudio => 'removeAudio';
+
+  @override
+  String get noAudio => 'No audio';
+
+  @override
+  String get errorPlayingAudio => 'Error playing audio';
+
+  @override
+  String get errorLoadingDeck => 'Error loading deck';
+
+  @override
+  String get errorLoadingCards => 'Error loading cards';
+
+  @override
+  String get noDeckData => 'No deck data';
+
+  @override
+  String get cardCreatedSuccessfully => 'Card created successfully';
+
+  @override
+  String errorCreatingCard(Object error) {
+    return 'Error creating card: $error';
+  }
+
+  @override
+  String get debug => 'debug';
+
+  @override
+  String get errorLoadingDecks => 'Error loading Decks';
+
+  @override
+  String get addCards => 'addCards';
+
+  @override
+  String get deckDeletedSuccessfully => 'Deck deleted successfully';
+
+  @override
+  String get errorDeletingDeck => 'Error deleting deck';
 }

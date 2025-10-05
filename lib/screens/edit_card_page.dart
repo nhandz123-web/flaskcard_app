@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 import '../models/card.dart' as card_model;
@@ -26,9 +25,9 @@ class _EditCardPageState extends State<EditCardPage> {
   late TextEditingController _exampleController;
   late TextEditingController _imageUrlController;
   late TextEditingController _audioUrlController;
-  late TextEditingController _extraController;
   File? _selectedImage;
   File? _selectedAudio;
+  Map<String, dynamic>? _extra;
 
   @override
   void initState() {
@@ -39,9 +38,7 @@ class _EditCardPageState extends State<EditCardPage> {
     _exampleController = TextEditingController(text: widget.card.example ?? '');
     _imageUrlController = TextEditingController(text: widget.card.imageUrl ?? '');
     _audioUrlController = TextEditingController(text: widget.card.audioUrl ?? '');
-    _extraController = TextEditingController(
-      text: widget.card.extra != null ? widget.card.extra.toString() : '',
-    );
+    _extra = widget.card.extra;
   }
 
   @override
@@ -52,7 +49,6 @@ class _EditCardPageState extends State<EditCardPage> {
     _exampleController.dispose();
     _imageUrlController.dispose();
     _audioUrlController.dispose();
-    _extraController.dispose();
     super.dispose();
   }
 
@@ -105,9 +101,9 @@ class _EditCardPageState extends State<EditCardPage> {
           'back': _backController.text,
           'phonetic': _phoneticController.text.isNotEmpty ? _phoneticController.text : null,
           'example': _exampleController.text.isNotEmpty ? _exampleController.text : null,
-          'imageUrl': imageUrl,
-          'audioUrl': audioUrl,
-          'extra': _extraController.text.isNotEmpty ? _extraController.text : null,
+          'image_url': imageUrl,
+          'audio_url': audioUrl,
+          'extra': _extra,
         };
 
         print('Updating card with data: $data');
@@ -172,7 +168,17 @@ class _EditCardPageState extends State<EditCardPage> {
                     onPressed: _pickImage,
                     tooltip: AppLocalizations.of(context)!.uploadImage ?? 'Upload Image',
                   ),
-
+                  if (_imageUrlController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _selectedImage = null;
+                          _imageUrlController.clear();
+                        });
+                      },
+                      tooltip: AppLocalizations.of(context)!.removeImage ?? 'Remove Image',
+                    ),
                 ],
               ),
               Row(
@@ -189,7 +195,17 @@ class _EditCardPageState extends State<EditCardPage> {
                     onPressed: _pickAudio,
                     tooltip: AppLocalizations.of(context)!.uploadAudio ?? 'Upload Audio',
                   ),
-
+                  if (_audioUrlController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _selectedAudio = null;
+                          _audioUrlController.clear();
+                        });
+                      },
+                      tooltip: AppLocalizations.of(context)!.removeAudio ?? 'Remove Audio',
+                    ),
                 ],
               ),
               const SizedBox(height: 20),

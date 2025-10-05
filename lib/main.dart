@@ -135,10 +135,11 @@ class MyApp extends StatelessWidget {
               GoRoute(
                 path: '/app/deck/:deckId/add-cards',
                 builder: (context, state) {
-                  final deckId = int.parse(state.pathParameters['deckId']!);
-                  final api = Provider.of<ApiService>(context, listen: false);
-                  return AddCardsPage(api: api, deckId: deckId);
-
+                  final extra = state.extra as Map<String, dynamic>? ?? {};
+                  return AddCardPage(
+                    api: extra['api'] as ApiService? ?? Provider.of<ApiService>(context, listen: false),
+                    deckId: int.parse(state.pathParameters['deckId']!),
+                  );
                 },
               ),
               GoRoute(

@@ -5,6 +5,7 @@ class Deck {
   final String description;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int cardsCount;
 
   Deck({
     required this.id,
@@ -13,6 +14,7 @@ class Deck {
     required this.description,
     required this.createdAt,
     required this.updatedAt,
+    required this.cardsCount,
   });
 
   factory Deck.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,7 @@ class Deck {
       userId: json['user_id'] as int? ?? 0, // Sử dụng 0 nếu user_id là null
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      cardsCount: json['cards_count'] ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );

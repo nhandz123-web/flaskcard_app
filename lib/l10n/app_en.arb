@@ -30,6 +30,7 @@
   "cardAdded": "Card added successfully",
 
   "editDeck": "Edit Deck",
+  "cards": "cards",
   "addCard": "Add Card",
   "name": "Name",
   "front": "Front",
@@ -71,5 +72,17 @@
   "audioUrl": "Audio URL",
   "example": "example",
   "removeImage" : "removeImage",
-  "removeAudio": "removeAudio"
+  "removeAudio": "removeAudio",
+  "noAudio" : "No audio",
+  "errorPlayingAudio" : "Error playing audio",
+  "errorLoadingDeck": "Error loading deck",
+  "errorLoadingCards": "Error loading cards",
+  "noDeckData" :"No deck data",
+  "cardCreatedSuccessfully": "Card created successfully",
+  "errorCreatingCard": "Error creating card: {error}",
+  "debug": "debug",
+  "errorLoadingDecks" : "Error loading Decks",
+  "addCards": "addCards",
+  "deckDeletedSuccessfully": "Deck deleted successfully",
+  "errorDeletingDeck" : "Error deleting deck"
 }
