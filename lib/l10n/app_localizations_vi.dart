@@ -169,4 +169,59 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get meaningRequired => 'Nghĩa là bắt buộc';
+
+  @override
+  String get noCards => 'Chưa có thẻ';
+
+  @override
+  String get edit => 'Sửa';
+
+  @override
+  String get delete => 'Xóa';
+
+  @override
+  String get confirm => 'Xác nhận';
+
+  @override
+  String get confirmDeleteCard => 'Bạn có chắc chắn muốn xoá card này?';
+
+  @override
+  String get cancel => 'Hủy';
+
+  @override
+  String get cardDeletedSuccessfully => 'Card đã được xóa thành công';
+
+  @override
+  String errorDeletingCard(Object error) {
+    return 'Lỗi: $error';
+  }
+
+  @override
+  String get cardUpdatedSuccessfully => 'Thẻ đã được cập nhật thành công';
+
+  @override
+  String errorUpdatingCard(Object error) {
+    return 'Lỗi khi cập nhật thẻ: $error';
+  }
+
+  @override
+  String get editCard => 'Chỉnh sửa thẻ';
+
+  @override
+  String get requiredField => 'Trường này là bắt buộc';
+
+  @override
+  String get imageUrl => 'Đường dẫn hình ảnh';
+
+  @override
+  String get audioUrl => 'Đường dẫn âm thanh';
+
+  @override
+  String get example => 'ví dụ';
+
+  @override
+  String get removeImage => 'removeImage';
+
+  @override
+  String get removeAudio => 'removeAudio';
 }

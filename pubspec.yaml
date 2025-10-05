@@ -50,6 +50,7 @@ dependencies:
   skeletonizer: ^1.4.0  # Để làm skeleton loading (optional, nhưng tiện cho S2-07)
   file_picker: ^8.0.0
   image_picker: ^1.0.0  # Thay mage_picker bằng image_picker
+  audioplayers: ^5.2.0
 
   flutter_localizations:
     sdk: flutter

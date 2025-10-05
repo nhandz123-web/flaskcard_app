@@ -16,7 +16,10 @@ import 'screens/home_page.dart';
 import 'features/settings/settings_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/edit_deck_page.dart';
-import 'screens/add_cards_page.dart'; // Import màn hình mới
+import 'screens/add_cards_page.dart';
+import 'screens/edit_card_page.dart';
+import 'models/deck.dart' as deck_model;
+import 'models/card.dart' as card_model;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,10 +74,11 @@ class MyApp extends StatelessWidget {
               final isCreateDeckRoute = state.fullPath == '/app/create-deck';
               final isEditDeckRoute = state.fullPath?.startsWith('/app/edit-deck/') ?? false;
               final isDecksRoute = state.fullPath == '/app/decks';
-              final isAddCardsRoute = state.fullPath?.startsWith('/app/deck/') ?? false; // Thêm kiểm tra route add-cards
+              final isAddCardsRoute = state.fullPath?.startsWith('/app/deck/') ?? false; // Đã có
+              final isEditCardRoute = state.fullPath?.startsWith('/app/deck/') ?? false; // Đã có
               final currentLocation = state.fullPath;
 
-              print('Redirect check: location=$currentLocation, lastKnownRoute=${settings.lastKnownRoute}, token=$token, userId=${userProvider.userId}, needAuth=${!isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute}, isSettingsRoute=$isSettingsRoute');
+              print('Redirect check: location=$currentLocation, lastKnownRoute=${settings.lastKnownRoute}, token=$token, userId=${userProvider.userId}, needAuth=${!isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute}, isSettingsRoute=$isSettingsRoute');
 
               if (currentLocation != null && currentLocation != settings.lastKnownRoute) {
                 settings.setLastKnownRoute(currentLocation);
@@ -93,11 +97,11 @@ class MyApp extends StatelessWidget {
                 return '/home';
               }
 
-              if (isSettingsRoute || isCreateDeckRoute || isEditDeckRoute || isDecksRoute || isAddCardsRoute || (settings.lastKnownRoute != null && (settings.lastKnownRoute == '/app/settings' || settings.lastKnownRoute == '/app/create-deck' || settings.lastKnownRoute.startsWith('/app/edit-deck/') || settings.lastKnownRoute == '/app/decks' || settings.lastKnownRoute.startsWith('/app/deck/')))) {
+              if (isSettingsRoute || isCreateDeckRoute || isEditDeckRoute || isDecksRoute || isAddCardsRoute || isEditCardRoute || (settings.lastKnownRoute != null && (settings.lastKnownRoute == '/app/settings' || settings.lastKnownRoute == '/app/create-deck' || settings.lastKnownRoute.startsWith('/app/edit-deck/') || settings.lastKnownRoute == '/app/decks' || settings.lastKnownRoute.startsWith('/app/deck/')))) {
                 return null;
               }
 
-              if (token != null && userProvider.userId != null && !isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute) {
+              if (token != null && userProvider.userId != null && !isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute) {
                 return null;
               }
 
@@ -125,13 +129,34 @@ class MyApp extends StatelessWidget {
                 path: '/app/deck/:id/cards',
                 builder: (context, state) {
                   final id = int.parse(state.pathParameters['id']!);
-                  return CardsPage(api: api, deckId: id);
+                  return CardsPage(api: api, deckId: id, deck: state.extra as deck_model.Deck?);
+                },
+              ),
+              GoRoute(
+                path: '/app/deck/:deckId/add-cards',
+                builder: (context, state) {
+                  final deckId = int.parse(state.pathParameters['deckId']!);
+                  final api = Provider.of<ApiService>(context, listen: false);
+                  return AddCardsPage(api: api, deckId: deckId);
+
+                },
+              ),
+              GoRoute(
+                path: '/app/deck/:deckId/edit-card/:cardId',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  return EditCardPage(
+                    api: extra['api'] as ApiService,
+                    deckId: int.parse(state.pathParameters['deckId']!),
+                    card: extra['card'] as card_model.Card,
+                  );
                 },
               ),
               GoRoute(
                 path: '/app/create-deck',
                 builder: (context, state) => CreateDeckPage(api: api),
               ),
+
               GoRoute(
                 path: '/app/edit-deck/:deckId',
                 builder: (context, state) {
@@ -139,7 +164,6 @@ class MyApp extends StatelessWidget {
                   return EditDeckPage(api: api, deckId: deckId);
                 },
               ),
-
               GoRoute(
                 path: '/app/settings',
                 builder: (context, state) => const SettingsPage(),
@@ -149,10 +173,15 @@ class MyApp extends StatelessWidget {
                 builder: (context, state) => ProfilePage(api: api),
               ),
               GoRoute(
-                path: '/app/deck/:deckId/add-cards',
+                path: '/app/deck/:deckId/edit-card/:cardId',
                 builder: (context, state) {
                   final deckId = int.parse(state.pathParameters['deckId']!);
-                  return AddCardsPage(api: api, deckId: deckId);
+                  final cardId = int.parse(state.pathParameters['cardId']!);
+                  final card = state.extra as card_model.Card?;
+                  if (card == null) {
+                    throw Exception('Card data not provided for editing');
+                  }
+                  return EditCardPage(api: api, deckId: deckId, card: card);
                 },
               ),
             ],
@@ -176,6 +205,11 @@ class MyApp extends StatelessWidget {
                 )),
               ),
             ),
+            iconTheme: const IconThemeData(size: 24),
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              selectedIconTheme: IconThemeData(size: 24),
+              unselectedIconTheme: IconThemeData(size: 24),
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
@@ -194,6 +228,11 @@ class MyApp extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 )),
               ),
+            ),
+            iconTheme: const IconThemeData(size: 24),
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              selectedIconTheme: IconThemeData(size: 24),
+              unselectedIconTheme: IconThemeData(size: 24),
             ),
           ),
           locale: settings.locale,

@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import '../models/card.dart' as card_model;
 import '../core/settings/settings_provider.dart';
@@ -22,48 +25,64 @@ class _AddCardsPageState extends State<AddCardsPage> {
   final _frontController = TextEditingController();
   final _backController = TextEditingController();
   final _phoneticController = TextEditingController();
+  final _exampleController = TextEditingController();
   File? _imageFile;
   File? _audioFile;
   bool _isLoading = false;
 
   Future<void> _pickImage() async {
-    // Logic chọn hình ảnh (sử dụng file picker, ví dụ image_picker)
-    // Placeholder: Bạn cần thêm package image_picker
-    // _imageFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    // if (_imageFile != null && mounted) setState(() {});
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _pickAudio() async {
-    // Logic chọn âm thanh (sử dụng file picker, ví dụ file_picker)
-    // Placeholder: Bạn cần thêm package file_picker
-    // _audioFile = await FilePicker.platform.pickFiles(type: FileType.audio);
-    // if (_audioFile != null && mounted) setState(() {});
+    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _audioFile = File(result.files.single.path!);
+      });
+    }
   }
 
   Future<void> _createCard() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
+        print('Creating card with front: ${_frontController.text}, back: ${_backController.text}');
         final card = await widget.api.createCard(
           widget.deckId,
           _frontController.text,
           _backController.text,
           _phoneticController.text.isEmpty ? null : _phoneticController.text,
+          _exampleController.text.isEmpty ? null : _exampleController.text,
         );
+        print('Card created with ID: ${card.id}');
         if (_imageFile != null) {
+          print('Uploading image: ${_imageFile!.path}');
           await widget.api.uploadCardImage(card.id, _imageFile!);
+          print('Image upload completed');
+        } else {
+          print('No image file to upload');
         }
         if (_audioFile != null) {
-          // Giả sử có endpoint upload audio, bạn cần thêm vào backend
-          // await widget.api.uploadCardAudio(card.id, _audioFile!);
+          print('Uploading audio: ${_audioFile!.path}');
+          await widget.api.uploadCardAudio(card.id, _audioFile!);
+          print('Audio upload completed');
+        } else {
+          print('No audio file to upload');
         }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.cardCreated)),
         );
-        context.go('/app/deck/${widget.deckId}/cards');
+        Navigator.pop(context, true);
       } catch (e) {
         if (!mounted) return;
+        print('Error in createCard: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.error + ': $e')),
         );
@@ -78,6 +97,7 @@ class _AddCardsPageState extends State<AddCardsPage> {
     _frontController.dispose();
     _backController.dispose();
     _phoneticController.dispose();
+    _exampleController.dispose();
     super.dispose();
   }
 
@@ -161,7 +181,21 @@ class _AddCardsPageState extends State<AddCardsPage> {
                           ),
                         ),
                         style: TextStyle(color: theme.colorScheme.onBackground),
-                        validator: (value) => null, // Tùy chọn
+                        validator: (value) => null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _exampleController,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.example,
+                          labelStyle: TextStyle(color: theme.colorScheme.onBackground.withOpacity(0.6)),
+                          border: const OutlineInputBorder(),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                        ),
+                        style: TextStyle(color: theme.colorScheme.onBackground),
+                        validator: (value) => null,
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(

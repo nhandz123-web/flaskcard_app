@@ -3,6 +3,7 @@ import 'token_store.dart';
 import 'dart:io';
 import 'package:flashcard_app/models/card.dart' as card_model;
 import 'package:flashcard_app/models/deck.dart' as deck_model;
+import 'package:http/http.dart' as http; // Thêm import http
 
 class ApiService {
   final TokenStore _tokenStore;
@@ -12,7 +13,7 @@ class ApiService {
       : _dio = Dio(BaseOptions(baseUrl: 'http://10.12.216.12:8080')) {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _tokenStore.getToken();
+        final token = await _getToken();
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
           print('Request with token: $token');
@@ -38,6 +39,8 @@ class ApiService {
       },
     ));
   }
+
+  Future<String?> _getToken() async => await _tokenStore.getToken(); // Định nghĩa _getToken
 
   Future<String> login(String email, String password) async {
     try {
@@ -97,14 +100,30 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getCardsResponse(int deckId, {int page = 1}) async {
-    final response = await _dio.get('/api/decks/$deckId/cards', queryParameters: {'page': page});
-    return response.data;
+    try {
+      final response = await _dio.get('/api/decks/$deckId/cards', queryParameters: {'page': page});
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception('Failed to load cards: ${e.response?.statusCode} - ${e.message}');
+      }
+      throw Exception('Unexpected error: $e');
+    }
   }
 
   Future<List<card_model.Card>> getCards(int deckId, {int page = 1}) async {
-    final response = await getCardsResponse(deckId, page: page);
-    return (response['data'] as List).map((e) => card_model.Card.fromJson(e)).toList();
+    final response = await _dio.get(
+      '/api/decks/$deckId/cards',
+      queryParameters: {'page': page, '_': DateTime.now().millisecondsSinceEpoch}, // Tránh caching
+    );
+    if (response.statusCode == 200) {
+      return (response.data['data'] as List).map((e) => card_model.Card.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load cards: ${response.statusCode}');
+    }
   }
+
+
 
   Future<deck_model.Deck> createDeck(int userId, String name, String description) async {
     try {
@@ -133,18 +152,60 @@ class ApiService {
     }
   }
 
-  Future<card_model.Card> createCard(int deckId, String front, String back, String? note) async {
-    final response = await _dio.post('/api/decks/$deckId/cards', data: {'front': front, 'back': back, 'note': note});
-    return card_model.Card.fromJson(response.data);
+  Future<card_model.Card> createCard(int deckId, String front, String back, String? phonetic, String? example) async {
+    try {
+      final data = {
+        'front': front,
+        'back': back,
+        'phonetic': phonetic,
+        'example': example,
+      };
+      final response = await _dio.post(
+        '/api/decks/$deckId/cards',
+        data: data,
+      );
+      if (response.statusCode != 201) {
+        throw Exception('Failed to create card: ${response.statusCode}');
+      }
+      // Cập nhật để lấy dữ liệu từ khóa 'card' thay vì 'data'
+      final cardData = response.data['card'] as Map<String, dynamic>;
+      if (cardData == null) {
+        throw Exception('No card data in response: ${response.data}');
+      }
+      return card_model.Card.fromJson(cardData);
+    } catch (e) {
+      print('Create card error: $e');
+      throw e;
+    }
   }
 
-  Future<card_model.Card> updateCard(int cardId, Map<String, dynamic> data) async {
-    final response = await _dio.put('/api/cards/$cardId', data: data);
-    return card_model.Card.fromJson(response.data);
+  Future<card_model.Card> updateCard(int deckId, int cardId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put('/api/decks/$deckId/cards/$cardId', data: data);
+      if (response.statusCode == 200) {
+        return card_model.Card.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update card: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Update card error: $e');
+      throw e;
+    }
   }
 
-  Future<void> deleteCard(int cardId) async {
-    await _dio.delete('/api/cards/$cardId');
+
+  Future<void> deleteCard(int deckId, int cardId) async {
+    try {
+      final response = await _dio.delete(
+        '/api/decks/$deckId/cards/$cardId', // Sử dụng cả deckId và cardId
+      );
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete card: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Delete card error: $e');
+      throw Exception('Lỗi xóa card: $e');
+    }
   }
 
   Future<void> deleteDeck(int deckId) async {
@@ -190,5 +251,27 @@ class ApiService {
     });
     final response = await _dio.post('/api/cards/$cardId/upload-image', data: formData);
     return response.data['image_url'] as String;
+  }
+
+  Future<String> uploadCardAudio(int cardId, File audioFile) async {
+    try {
+      print('Sending audio upload request to: /api/cards/$cardId/audio');
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(audioFile.path), // Sử dụng 'file' như backend yêu cầu
+      });
+      final response = await _dio.post(
+        '/api/cards/$cardId/audio', // Thêm '/api' để khớp với route
+        data: formData,
+      );
+      print('Audio upload response status: ${response.statusCode}');
+      print('Audio upload response data: ${response.data}');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to upload audio: ${response.statusCode}');
+      }
+      return response.data['audio_url'] as String; // Trả về audio_url
+    } catch (e) {
+      print('Upload audio error: $e');
+      throw e;
+    }
   }
 }

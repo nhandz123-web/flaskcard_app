@@ -54,5 +54,20 @@
   "uploadAudio": "Tải âm thanh lên",
   "cardCreated": "Thêm thẻ thành công",
   "englishWordRequired": "Từ vựng tiếng Anh là bắt buộc",
-  "meaningRequired": "Nghĩa là bắt buộc"
+  "meaningRequired": "Nghĩa là bắt buộc",
+  "noCards": "Chưa có thẻ",
+  "edit": "Sửa",
+  "delete": "Xóa",
+  "confirm": "Xác nhận",
+  "confirmDeleteCard": "Bạn có chắc chắn muốn xoá card này?",
+  "cancel": "Hủy",
+  "cardDeletedSuccessfully": "Card đã được xóa thành công",
+  "errorDeletingCard": "Lỗi: {error}",
+  "cardUpdatedSuccessfully": "Thẻ đã được cập nhật thành công",
+  "errorUpdatingCard": "Lỗi khi cập nhật thẻ: {error}",
+  "editCard": "Chỉnh sửa thẻ",
+  "requiredField": "Trường này là bắt buộc",
+  "imageUrl": "Đường dẫn hình ảnh",
+  "audioUrl": "Đường dẫn âm thanh",
+  "example": "ví dụ"
 }

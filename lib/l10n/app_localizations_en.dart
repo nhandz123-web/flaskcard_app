@@ -169,4 +169,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meaningRequired => 'Meaning is required';
+
+  @override
+  String get noCards => 'Nocards';
+
+  @override
+  String get edit => 'Edit card';
+
+  @override
+  String get delete => 'Delete this card';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get confirmDeleteCard => 'Are you sure you want to delete this card?';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get cardDeletedSuccessfully => 'The card has been deleted successfully';
+
+  @override
+  String errorDeletingCard(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get cardUpdatedSuccessfully => 'The card has been updated successfully';
+
+  @override
+  String errorUpdatingCard(Object error) {
+    return 'Error updating card: $error';
+  }
+
+  @override
+  String get editCard => 'Edit Card';
+
+  @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get imageUrl => 'Image URL';
+
+  @override
+  String get audioUrl => 'Audio URL';
+
+  @override
+  String get example => 'example';
+
+  @override
+  String get removeImage => 'removeImage';
+
+  @override
+  String get removeAudio => 'removeAudio';
 }

@@ -418,6 +418,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meaning is required'**
   String get meaningRequired;
+
+  /// No description provided for @noCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Nocards'**
+  String get noCards;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit card'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this card'**
+  String get delete;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @confirmDeleteCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this card?'**
+  String get confirmDeleteCard;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @cardDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'The card has been deleted successfully'**
+  String get cardDeletedSuccessfully;
+
+  /// No description provided for @errorDeletingCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorDeletingCard(Object error);
+
+  /// No description provided for @cardUpdatedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'The card has been updated successfully'**
+  String get cardUpdatedSuccessfully;
+
+  /// No description provided for @errorUpdatingCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Error updating card: {error}'**
+  String errorUpdatingCard(Object error);
+
+  /// No description provided for @editCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Card'**
+  String get editCard;
+
+  /// No description provided for @requiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get requiredField;
+
+  /// No description provided for @imageUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Image URL'**
+  String get imageUrl;
+
+  /// No description provided for @audioUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio URL'**
+  String get audioUrl;
+
+  /// No description provided for @example.
+  ///
+  /// In en, this message translates to:
+  /// **'example'**
+  String get example;
+
+  /// No description provided for @removeImage.
+  ///
+  /// In en, this message translates to:
+  /// **'removeImage'**
+  String get removeImage;
+
+  /// No description provided for @removeAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'removeAudio'**
+  String get removeAudio;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

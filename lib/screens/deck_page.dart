@@ -43,13 +43,13 @@ class _DeckPageState extends State<DeckPage> {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(settings.fontScale),
-          ),
-          child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
-            body: SafeArea(
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          body: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaleFactor: settings.fontScale,
+            ),
+            child: SafeArea(
               child: Column(
                 children: [
                   Container(
@@ -154,7 +154,7 @@ class _DeckPageState extends State<DeckPage> {
                                           ),
                                         ),
                                         PopupMenuButton<String>(
-                                          icon: const Icon(Icons.more_vert, color: Colors.grey),
+                                          icon: const Icon(Icons.more_vert, size: 30, color: Colors.grey),
                                           onSelected: (value) async {
                                             switch (value) {
                                               case 'delete':
@@ -172,21 +172,21 @@ class _DeckPageState extends State<DeckPage> {
                                             const PopupMenuItem<String>(
                                               value: 'delete',
                                               child: ListTile(
-                                                leading: Icon(Icons.delete),
+                                                leading: Icon(Icons.delete, size: 30),
                                                 title: Text('Delete'),
                                               ),
                                             ),
                                             const PopupMenuItem<String>(
                                               value: 'edit',
                                               child: ListTile(
-                                                leading: Icon(Icons.edit),
+                                                leading: Icon(Icons.edit, size: 30),
                                                 title: Text('Edit'),
                                               ),
                                             ),
                                             const PopupMenuItem<String>(
                                               value: 'add_cards',
                                               child: ListTile(
-                                                leading: Icon(Icons.add_card),
+                                                leading: Icon(Icons.add_card, size: 30),
                                                 title: Text('Add Cards'),
                                               ),
                                             ),
@@ -206,53 +206,56 @@ class _DeckPageState extends State<DeckPage> {
                 ],
               ),
             ),
-            floatingActionButton: FloatingActionButton(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              onPressed: () {
-                context.go('/app/create-deck');
-              },
-              child: const Icon(Icons.add, size: 32),
+          ),
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Theme.of(context).colorScheme.onSecondary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).bottomAppBarTheme.color,
-                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _BottomNavItem(
-                    icon: Icons.home,
-                    label: AppLocalizations.of(context)!.home,
-                    onTap: () => context.go('/home'),
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.library_books,
-                    label: AppLocalizations.of(context)!.deck,
-                    active: true,
-                    onTap: () => context.go('/app/decks'),
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.people,
-                    label: "",
-                    onTap: () {},
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.account_circle,
-                    label: AppLocalizations.of(context)!.profile,
-                    onTap: () => context.go('/app/profile'),
-                    context: context,
-                  ),
-                ],
-              ),
+            onPressed: () {
+              context.go('/app/create-deck');
+            },
+            child: const Icon(Icons.add, size: 32),
+          ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).bottomAppBarTheme.color,
+              border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _BottomNavItem(
+                  icon: Icons.home,
+                  label: AppLocalizations.of(context)!.home,
+                  active: false,
+                  onTap: () => context.go('/home'),
+                  context: context,
+                ),
+                _BottomNavItem(
+                  icon: Icons.library_books,
+                  label: AppLocalizations.of(context)!.deck,
+                  active: true,
+                  onTap: () => context.go('/app/decks'),
+                  context: context,
+                ),
+                _BottomNavItem(
+                  icon: Icons.school,
+                  label: AppLocalizations.of(context)!.learn,
+                  active: false,
+                  onTap: () => context.go('/app/learn'),
+                  context: context,
+                ),
+                _BottomNavItem(
+                  icon: Icons.account_circle,
+                  label: AppLocalizations.of(context)!.profile,
+                  active: false,
+                  onTap: () => context.go('/app/profile'),
+                  context: context,
+                ),
+              ],
             ),
           ),
         );
@@ -307,21 +310,34 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = Theme.of(context).iconTheme.size ?? 24; // Lấy kích thước từ theme, mặc định 24 nếu không có
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: active ? Theme.of(this.context).colorScheme.secondary : Theme.of(this.context).colorScheme.onSurface.withOpacity(0.6), size: 22),
-          if (label.isNotEmpty)
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? Theme.of(this.context).colorScheme.secondary : Theme.of(this.context).colorScheme.onSurface.withOpacity(0.6),
-                fontSize: 12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                color: active
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                size: iconSize),
+            if (label.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: active
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 12, // Fix cứng cỡ chữ
+                  ),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

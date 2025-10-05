@@ -54,5 +54,22 @@
   "uploadAudio": "Upload Audio",
   "cardCreated": "Card created successfully",
   "englishWordRequired": "English word is required",
-  "meaningRequired": "Meaning is required"
+  "meaningRequired": "Meaning is required",
+  "noCards": "Nocards",
+  "edit": "Edit card",
+  "delete": "Delete this card",
+  "confirm": "Confirm",
+  "confirmDeleteCard": "Are you sure you want to delete this card?",
+  "cancel": "Cancel",
+  "cardDeletedSuccessfully": "The card has been deleted successfully",
+  "errorDeletingCard": "Error: {error}",
+  "cardUpdatedSuccessfully": "The card has been updated successfully",
+  "errorUpdatingCard": "Error updating card: {error}",
+  "editCard": "Edit Card",
+  "requiredField": "This field is required",
+  "imageUrl": "Image URL",
+  "audioUrl": "Audio URL",
+  "example": "example",
+  "removeImage" : "removeImage",
+  "removeAudio": "removeAudio"
 }
