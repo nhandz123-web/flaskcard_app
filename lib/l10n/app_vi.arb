@@ -75,5 +75,36 @@
   "errorLoadingDeck": "Error loading deck",
   "cardCreatedSuccessfully": "CThẻ đã được tạo thành công",
   "errorLoadingCards": "Lỗi khi tải thẻ",
-  "noDeckData" :"Chưa có thẻ "
+  "noDeckData" :"Chưa có thẻ ",
+  "welcome": "Chào mừng",
+  "welcomeBack": "quay trở lại",
+  "loading": "Đang tải...",
+  "dueCards": "Thẻ đến hạn hôm nay",
+  "goal": "mục tiêu",
+  "cardsPerDay": "thẻ/ngày",
+  "learnNow": "Học Ngay",
+  "streak": "Chuỗi",
+  "days": "ngày",
+  "markLearned": "Đánh dấu đã học",
+  "nextCard": "Thẻ tiếp theo",
+  "card": "Thẻ",
+
+  "noMoreCards": "Không còn thẻ",
+  "markCardAsLearned": "Đánh dấu thẻ đã học",
+  "errorMarkingCard": "Lỗi tạo thẻ",
+
+  "cardLearnedSuccessfully": "Học thẻ thành công",
+  "errorMarkingCardLearned": "Lỗi khi đánh dấu thẻ đã học",
+  "completedDeck": "Hoàn thành bộ thẻ",
+  "pauseAudio": "Tạm dừng âm thanh",
+  "playAudio": "Phát âm thanh",
+  "learned": "Đã học",
+  "next": "Tiếp theo",
+  "learnDeckTitle": "Học bộ thẻ #{deckId}",
+  "@learnDeckTitle": {
+    "description": "Tiêu đề cho trang Học bộ thẻ, hiển thị ID của bộ thẻ",
+    "placeholders": {
+      "deckId": {}
+    }
+  }
 }

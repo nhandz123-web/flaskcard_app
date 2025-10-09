@@ -51,10 +51,11 @@ dependencies:
   file_picker: ^8.0.0
   image_picker: ^1.0.0  # Thay mage_picker bằng image_picker
   audioplayers: ^5.2.0
+  flip_card: ^0.7.0
 
   flutter_localizations:
     sdk: flutter
-  intl: ^0.19.0
+  intl: ^0.20.2
 
 
 dev_dependencies:

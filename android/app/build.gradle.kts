@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.flashcard_app" // Thay bằng package name của bạn
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = 33 // Có thể cập nhật lên 35 sau
         versionCode = 1
         versionName = "1.0.0"

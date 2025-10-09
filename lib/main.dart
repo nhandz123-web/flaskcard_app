@@ -18,8 +18,11 @@ import 'screens/profile_page.dart';
 import 'screens/edit_deck_page.dart';
 import 'screens/add_cards_page.dart';
 import 'screens/edit_card_page.dart';
+import 'screens/learn_page.dart'; // Import new LearnPage
+import 'screens/learn_deck_page.dart';
 import 'models/deck.dart' as deck_model;
 import 'models/card.dart' as card_model;
+import 'screens/signup_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,16 +72,17 @@ class MyApp extends StatelessWidget {
               final token = await tokenStore.getToken();
               final userProvider = Provider.of<UserProvider>(context, listen: false);
               final settings = Provider.of<SettingsProvider>(context, listen: false);
-              final isAuthRoute = state.fullPath == '/login';
+              final isAuthRoute = state.fullPath == '/login' || state.fullPath == '/signup';
               final isSettingsRoute = state.fullPath == '/app/settings';
               final isCreateDeckRoute = state.fullPath == '/app/create-deck';
               final isEditDeckRoute = state.fullPath?.startsWith('/app/edit-deck/') ?? false;
               final isDecksRoute = state.fullPath == '/app/decks';
-              final isAddCardsRoute = state.fullPath?.startsWith('/app/deck/') ?? false; // Đã có
-              final isEditCardRoute = state.fullPath?.startsWith('/app/deck/') ?? false; // Đã có
+              final isAddCardsRoute = state.fullPath?.startsWith('/app/deck/') ?? false;
+              final isEditCardRoute = state.fullPath?.startsWith('/app/deck/') ?? false;
+              final isLearnRoute = state.fullPath == '/app/learn' || (state.fullPath?.startsWith('/app/learn/') ?? false);
               final currentLocation = state.fullPath;
 
-              print('Redirect check: location=$currentLocation, lastKnownRoute=${settings.lastKnownRoute}, token=$token, userId=${userProvider.userId}, needAuth=${!isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute}, isSettingsRoute=$isSettingsRoute');
+              print('Redirect check: location=$currentLocation, lastKnownRoute=${settings.lastKnownRoute}, token=$token, userId=${userProvider.userId}, needAuth=${!isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute && !isLearnRoute}');
 
               if (currentLocation != null && currentLocation != settings.lastKnownRoute) {
                 settings.setLastKnownRoute(currentLocation);
@@ -92,16 +96,16 @@ class MyApp extends StatelessWidget {
                 return null;
               }
 
-              if (token != null && userProvider.userId != null && isAuthRoute && settings.lastKnownRoute != '/app/settings' && settings.lastKnownRoute != '/app/create-deck' && !isEditDeckRoute) {
+              if (token != null && userProvider.userId != null && isAuthRoute && settings.lastKnownRoute != '/app/settings' && settings.lastKnownRoute != '/app/create-deck' && !isEditDeckRoute && !isLearnRoute) {
                 print('Redirecting to /home due to valid token and userId');
                 return '/home';
               }
 
-              if (isSettingsRoute || isCreateDeckRoute || isEditDeckRoute || isDecksRoute || isAddCardsRoute || isEditCardRoute || (settings.lastKnownRoute != null && (settings.lastKnownRoute == '/app/settings' || settings.lastKnownRoute == '/app/create-deck' || settings.lastKnownRoute.startsWith('/app/edit-deck/') || settings.lastKnownRoute == '/app/decks' || settings.lastKnownRoute.startsWith('/app/deck/')))) {
+              if (isSettingsRoute || isCreateDeckRoute || isEditDeckRoute || isDecksRoute || isAddCardsRoute || isEditCardRoute || isLearnRoute || (settings.lastKnownRoute != null && (settings.lastKnownRoute == '/app/settings' || settings.lastKnownRoute == '/app/create-deck' || settings.lastKnownRoute.startsWith('/app/edit-deck/') || settings.lastKnownRoute == '/app/decks' || settings.lastKnownRoute.startsWith('/app/deck/') || settings.lastKnownRoute == '/app/learn' || settings.lastKnownRoute.startsWith('/app/learn/')))) {
                 return null;
               }
 
-              if (token != null && userProvider.userId != null && !isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute) {
+              if (token != null && userProvider.userId != null && !isAuthRoute && !isSettingsRoute && !isCreateDeckRoute && !isEditDeckRoute && !isDecksRoute && !isAddCardsRoute && !isEditCardRoute && !isLearnRoute) {
                 return null;
               }
 
@@ -118,12 +122,28 @@ class MyApp extends StatelessWidget {
                 builder: (context, state) => LoginPage(api: api),
               ),
               GoRoute(
+                path: '/signup',
+                builder: (context, state) => SignupPage(api: api),
+              ),
+
+              GoRoute(
                 path: '/home',
                 builder: (context, state) => HomePage(api: api),
               ),
               GoRoute(
                 path: '/app/decks',
                 builder: (context, state) => DeckPage(api: api),
+              ),
+              GoRoute(
+                path: '/app/learn',
+                builder: (context, state) => LearnPage(api: api), // New route for LearnPage
+              ),
+              GoRoute(
+                path: '/app/learn-deck/:deckId',
+                builder: (context, state) {
+                  final deckId = int.parse(state.pathParameters['deckId']!);
+                  return LearnDeckPage(api: api, deckId: deckId);
+                },
               ),
               GoRoute(
                 path: '/app/deck/:id/cards',
@@ -157,7 +177,6 @@ class MyApp extends StatelessWidget {
                 path: '/app/create-deck',
                 builder: (context, state) => CreateDeckPage(api: api),
               ),
-
               GoRoute(
                 path: '/app/edit-deck/:deckId',
                 builder: (context, state) {
@@ -172,18 +191,6 @@ class MyApp extends StatelessWidget {
               GoRoute(
                 path: '/app/profile',
                 builder: (context, state) => ProfilePage(api: api),
-              ),
-              GoRoute(
-                path: '/app/deck/:deckId/edit-card/:cardId',
-                builder: (context, state) {
-                  final deckId = int.parse(state.pathParameters['deckId']!);
-                  final cardId = int.parse(state.pathParameters['cardId']!);
-                  final card = state.extra as card_model.Card?;
-                  if (card == null) {
-                    throw Exception('Card data not provided for editing');
-                  }
-                  return EditCardPage(api: api, deckId: deckId, card: card);
-                },
               ),
             ],
           ),

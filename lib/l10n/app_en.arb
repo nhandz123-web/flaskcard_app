@@ -84,5 +84,34 @@
   "errorLoadingDecks" : "Error loading Decks",
   "addCards": "addCards",
   "deckDeletedSuccessfully": "Deck deleted successfully",
-  "errorDeletingDeck" : "Error deleting deck"
+  "errorDeletingDeck" : "Error deleting deck","welcome": "Welcome",
+  "welcomeBack": "back",
+  "loading": "Loading...",
+  "dueCards": "Cards due today",
+  "goal": "goal",
+  "cardsPerDay": "cards/day",
+  "learnNow": "Learn Now",
+  "streak": "Streak",
+  "days": "days",
+  "markLearned": "Mark as Learned",
+  "nextCard": "Next Card",
+  "card": "Card",
+  "noMoreCards": "No more cards",
+  "markCardAsLearned": "Mark card as learned",
+  "errorMarkingCard": "errorMarkingCard",
+
+  "cardLearnedSuccessfully": "Card learned successfully",
+  "errorMarkingCardLearned": "Error marking Card Learned",
+  "completedDeck" : "Completed deck",
+  "pauseAudio" : "Pause audio",
+  "playAudio" : "Play audio",
+  "learned" : "Learned",
+  "next" :"Next",
+  "learnDeckTitle": "Learn Deck #{deckId}",
+  "@learnDeckTitle": {
+    "description": "Title for the Learn Deck page, displaying the deck ID",
+    "placeholders": {
+      "deckId": {}
+    }
+  }
 }

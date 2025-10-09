@@ -39,7 +39,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get study_play => 'Phát lại';
 
   @override
-  String get settings_hint => 'Các cài đặt này lưu trên thiết bị (SharedPreferences). Bạn có thể đồng bộ lên server ở bước sau.';
+  String get settings_hint =>
+      'Các cài đặt này lưu trên thiết bị (SharedPreferences). Bạn có thể đồng bộ lên server ở bước sau.';
 
   @override
   String get home => 'Trang chủ';
@@ -265,4 +266,75 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get errorDeletingDeck => 'Error deleting deck';
+
+  @override
+  String get welcome => 'Chào mừng';
+
+  @override
+  String get welcomeBack => 'quay trở lại';
+
+  @override
+  String get loading => 'Đang tải...';
+
+  @override
+  String get dueCards => 'Thẻ đến hạn hôm nay';
+
+  @override
+  String get goal => 'mục tiêu';
+
+  @override
+  String get cardsPerDay => 'thẻ/ngày';
+
+  @override
+  String get learnNow => 'Học Ngay';
+
+  @override
+  String get streak => 'Chuỗi';
+
+  @override
+  String get days => 'ngày';
+
+  @override
+  String get markLearned => 'Đánh dấu đã học';
+
+  @override
+  String get nextCard => 'Thẻ tiếp theo';
+
+  @override
+  String get card => 'Thẻ';
+
+  @override
+  String get noMoreCards => 'Không còn thẻ';
+
+  @override
+  String get markCardAsLearned => 'Đánh dấu thẻ đã học';
+
+  @override
+  String get errorMarkingCard => 'Lỗi tạo thẻ';
+
+  @override
+  String get cardLearnedSuccessfully => 'Học thẻ thành công';
+
+  @override
+  String get errorMarkingCardLearned => 'Lỗi khi đánh dấu thẻ đã học';
+
+  @override
+  String get completedDeck => 'Hoàn thành bộ thẻ';
+
+  @override
+  String get pauseAudio => 'Tạm dừng âm thanh';
+
+  @override
+  String get playAudio => 'Phát âm thanh';
+
+  @override
+  String get learned => 'Đã học';
+
+  @override
+  String get next => 'Tiếp theo';
+
+  @override
+  String learnDeckTitle(Object deckId) {
+    return 'Học bộ thẻ #$deckId';
+  }
 }

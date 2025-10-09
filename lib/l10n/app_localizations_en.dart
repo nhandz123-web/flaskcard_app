@@ -39,7 +39,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get study_play => 'Play';
 
   @override
-  String get settings_hint => 'These settings are saved on device (SharedPreferences). You can sync to server later.';
+  String get settings_hint =>
+      'These settings are saved on device (SharedPreferences). You can sync to server later.';
 
   @override
   String get home => 'Home';
@@ -192,7 +193,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
-  String get cardDeletedSuccessfully => 'The card has been deleted successfully';
+  String get cardDeletedSuccessfully =>
+      'The card has been deleted successfully';
 
   @override
   String errorDeletingCard(Object error) {
@@ -200,7 +202,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cardUpdatedSuccessfully => 'The card has been updated successfully';
+  String get cardUpdatedSuccessfully =>
+      'The card has been updated successfully';
 
   @override
   String errorUpdatingCard(Object error) {
@@ -265,4 +268,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorDeletingDeck => 'Error deleting deck';
+
+  @override
+  String get welcome => 'Welcome';
+
+  @override
+  String get welcomeBack => 'back';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get dueCards => 'Cards due today';
+
+  @override
+  String get goal => 'goal';
+
+  @override
+  String get cardsPerDay => 'cards/day';
+
+  @override
+  String get learnNow => 'Learn Now';
+
+  @override
+  String get streak => 'Streak';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get markLearned => 'Mark as Learned';
+
+  @override
+  String get nextCard => 'Next Card';
+
+  @override
+  String get card => 'Card';
+
+  @override
+  String get noMoreCards => 'No more cards';
+
+  @override
+  String get markCardAsLearned => 'Mark card as learned';
+
+  @override
+  String get errorMarkingCard => 'errorMarkingCard';
+
+  @override
+  String get cardLearnedSuccessfully => 'Card learned successfully';
+
+  @override
+  String get errorMarkingCardLearned => 'Error marking Card Learned';
+
+  @override
+  String get completedDeck => 'Completed deck';
+
+  @override
+  String get pauseAudio => 'Pause audio';
+
+  @override
+  String get playAudio => 'Play audio';
+
+  @override
+  String get learned => 'Learned';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String learnDeckTitle(Object deckId) {
+    return 'Learn Deck #$deckId';
+  }
 }

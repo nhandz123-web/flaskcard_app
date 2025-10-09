@@ -3,6 +3,8 @@ import 'token_store.dart';
 import 'dart:io';
 import 'package:flashcard_app/models/card.dart' as card_model;
 import 'package:flashcard_app/models/deck.dart' as deck_model;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ApiService {
   final TokenStore _tokenStore;
@@ -301,6 +303,48 @@ class ApiService {
     } catch (e) {
       print('Upload audio error: $e');
       throw e;
+    }
+  }
+
+  Future<List<card_model.Card>> getCardsToReview(int deckId) async {
+    try {
+      final response = await _dio.get('/api/decks/$deckId/learn');
+      if (response.statusCode == 200) {
+        return (response.data['cards'] as List).map((e) => card_model.Card.fromJson(e)).toList();
+      } else {
+        throw Exception('Failed to load cards to review: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Get cards to review error: $e');
+      throw e;
+    }
+  }
+
+  Future<void> updateCardProgress(int deckId, int cardId, int quality) async {
+    try {
+      final response = await _dio.post(
+        '/api/decks/$deckId/cards/$cardId/progress',
+        data: {'quality': quality},
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update card progress: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Update card progress error: $e');
+      throw e;
+    }
+  }
+
+  Future<void> markCardAsLearned(int cardId) async {
+    final token = await _tokenStore.getToken();
+    final response = await _dio.post(
+      '/api/cards/$cardId/learned', // cardId is converted to String in URL
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to mark card as learned');
     }
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
-import '../providers/user_provider.dart';
+import 'package:flashcard_app/services/api_service.dart';
+import 'package:flashcard_app/providers/user_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.api});
@@ -30,21 +30,21 @@ class _LoginPageState extends State<LoginPage> {
     if (!_form.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      // Gọi API login và lưu token
+      // Gọi API login
       await widget.api.login(_email.text.trim(), _pass.text);
       print('Login successful, token saved');
 
-      // Cập nhật UserProvider sau khi login
+      // Cập nhật UserProvider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.loadUser();
       print('UserId after login: ${userProvider.userId}');
 
-      // Điều hướng thủ công đến /home
+      // Điều hướng đến HomePage
       if (mounted) {
-        context.go('/home');
+        context.go('/home', extra: widget.api);
       }
     } catch (e) {
-      print('Lỗi đăng nhập: $e'); // Debug log
+      print('Lỗi đăng nhập: $e');
       _showErr(_friendly(e));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey[100], // nền full màn
+      backgroundColor: Colors.grey[100],
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -84,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
-                )
+                ),
               ],
             ),
             child: Form(
@@ -103,10 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 16),
-                  _BrandHeader(),
                   const SizedBox(height: 22),
-
-                  // Email
                   TextFormField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
@@ -126,8 +123,6 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: 14),
-
-                  // Password
                   TextFormField(
                     controller: _pass,
                     obscureText: _obscure,
@@ -147,18 +142,15 @@ class _LoginPageState extends State<LoginPage> {
                     validator: (v) =>
                     (v == null || v.length < 8) ? 'Tối thiểu 8 ký tự' : null,
                   ),
-
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
-                      child: const Text('Quên mật khẩu ?'),
+                      child: const Text('Quên mật khẩu?'),
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // Button login
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -185,7 +177,6 @@ class _LoginPageState extends State<LoginPage> {
                           : const Text('Đăng nhập'),
                     ),
                   ),
-
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => context.go('/signup'),
@@ -209,11 +200,13 @@ class _BrandHeader extends StatelessWidget {
       children: [
         const Icon(Icons.bolt, color: Colors.redAccent, size: 28),
         const SizedBox(width: 8),
-        Text('LexiFlash',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          'LexiFlash',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
       ],
     );
   }

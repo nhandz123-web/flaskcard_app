@@ -62,7 +62,8 @@ import 'app_localizations_vi.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,17 +84,18 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('vi')
+    Locale('vi'),
   ];
 
   /// No description provided for @lexiFlash.
@@ -598,9 +601,148 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error deleting deck'**
   String get errorDeletingDeck;
+
+  /// No description provided for @welcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get welcome;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'back'**
+  String get welcomeBack;
+
+  /// No description provided for @loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loading;
+
+  /// No description provided for @dueCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards due today'**
+  String get dueCards;
+
+  /// No description provided for @goal.
+  ///
+  /// In en, this message translates to:
+  /// **'goal'**
+  String get goal;
+
+  /// No description provided for @cardsPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'cards/day'**
+  String get cardsPerDay;
+
+  /// No description provided for @learnNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn Now'**
+  String get learnNow;
+
+  /// No description provided for @streak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get streak;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
+
+  /// No description provided for @markLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Learned'**
+  String get markLearned;
+
+  /// No description provided for @nextCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Card'**
+  String get nextCard;
+
+  /// No description provided for @card.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get card;
+
+  /// No description provided for @noMoreCards.
+  ///
+  /// In en, this message translates to:
+  /// **'No more cards'**
+  String get noMoreCards;
+
+  /// No description provided for @markCardAsLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark card as learned'**
+  String get markCardAsLearned;
+
+  /// No description provided for @errorMarkingCard.
+  ///
+  /// In en, this message translates to:
+  /// **'errorMarkingCard'**
+  String get errorMarkingCard;
+
+  /// No description provided for @cardLearnedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Card learned successfully'**
+  String get cardLearnedSuccessfully;
+
+  /// No description provided for @errorMarkingCardLearned.
+  ///
+  /// In en, this message translates to:
+  /// **'Error marking Card Learned'**
+  String get errorMarkingCardLearned;
+
+  /// No description provided for @completedDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed deck'**
+  String get completedDeck;
+
+  /// No description provided for @pauseAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause audio'**
+  String get pauseAudio;
+
+  /// No description provided for @playAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Play audio'**
+  String get playAudio;
+
+  /// No description provided for @learned.
+  ///
+  /// In en, this message translates to:
+  /// **'Learned'**
+  String get learned;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// Title for the Learn Deck page, displaying the deck ID
+  ///
+  /// In en, this message translates to:
+  /// **'Learn Deck #{deckId}'**
+  String learnDeckTitle(Object deckId);
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -609,25 +751,26 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'vi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'vi'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'vi': return AppLocalizationsVi();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'vi':
+      return AppLocalizationsVi();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }
