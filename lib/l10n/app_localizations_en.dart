@@ -339,4 +339,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String learnDeckTitle(Object deckId) {
     return 'Learn Deck #$deckId';
   }
+
+  @override
+  String get noCardsToReview => 'No cards to review today.';
+
+  @override
+  String get again => 'Again';
+
+  @override
+  String get hard => 'Hard';
+
+  @override
+  String get normal => 'Normal';
+
+  @override
+  String get easy => 'Easy';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String get reviewAgain => 'The card will be reviewed again after 1 minute.';
+
+  @override
+  String get reviewHard => 'The card will be reviewed again after 5 minutes.';
+
+  @override
+  String get reviewNormal =>
+      'The card will be reviewed again after 10 minutes.';
+
+  @override
+  String get reviewEasy => 'The card will be reviewed again after 1 day.';
 }

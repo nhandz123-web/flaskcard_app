@@ -113,5 +113,53 @@
     "placeholders": {
       "deckId": {}
     }
+  },
+
+  "learnDeckTitle": "Learn Deck #{deckId}",
+  "@learnDeckTitle": {
+    "description": "Title for the Learn Deck page, displaying the deck ID",
+    "placeholders": {
+      "deckId": {}
+    }
+  },
+  "noCardsToReview": "No cards to review today.",
+  "@noCardsToReview": {
+    "description": "Message when there are no cards to review"
+  },
+  "again": "Again",
+  "@again": {
+    "description": "Label for the 'Again' review button"
+  },
+  "hard": "Hard",
+  "@hard": {
+    "description": "Label for the 'Hard' review button"
+  },
+  "normal": "Normal",
+  "@normal": {
+    "description": "Label for the 'Normal' review button"
+  },
+  "easy": "Easy",
+  "@easy": {
+    "description": "Label for the 'Easy' review button"
+  },
+  "progress": "Progress",
+  "@progress": {
+    "description": "Label for the learning progress indicator"
+  },
+  "reviewAgain": "The card will be reviewed again after 1 minute.",
+  "@reviewAgain": {
+    "description": "Message shown when a card is marked to be reviewed again"
+  },
+  "reviewHard": "The card will be reviewed again after 5 minutes.",
+  "@reviewHard": {
+    "description": "Message shown when a card is marked as hard"
+  },
+  "reviewNormal": "The card will be reviewed again after 10 minutes.",
+  "@reviewNormal": {
+    "description": "Message shown when a card is marked as normal"
+  },
+  "reviewEasy": "The card will be reviewed again after 1 day.",
+  "@reviewEasy": {
+    "description": "Message shown when a card is marked as easy"
   }
 }

@@ -739,6 +739,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Learn Deck #{deckId}'**
   String learnDeckTitle(Object deckId);
+
+  /// Message when there are no cards to review
+  ///
+  /// In en, this message translates to:
+  /// **'No cards to review today.'**
+  String get noCardsToReview;
+
+  /// Label for the 'Again' review button
+  ///
+  /// In en, this message translates to:
+  /// **'Again'**
+  String get again;
+
+  /// Label for the 'Hard' review button
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get hard;
+
+  /// Label for the 'Normal' review button
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normal;
+
+  /// Label for the 'Easy' review button
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get easy;
+
+  /// Label for the learning progress indicator
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progress;
+
+  /// Message shown when a card is marked to be reviewed again
+  ///
+  /// In en, this message translates to:
+  /// **'The card will be reviewed again after 1 minute.'**
+  String get reviewAgain;
+
+  /// Message shown when a card is marked as hard
+  ///
+  /// In en, this message translates to:
+  /// **'The card will be reviewed again after 5 minutes.'**
+  String get reviewHard;
+
+  /// Message shown when a card is marked as normal
+  ///
+  /// In en, this message translates to:
+  /// **'The card will be reviewed again after 10 minutes.'**
+  String get reviewNormal;
+
+  /// Message shown when a card is marked as easy
+  ///
+  /// In en, this message translates to:
+  /// **'The card will be reviewed again after 1 day.'**
+  String get reviewEasy;
 }
 
 class _AppLocalizationsDelegate

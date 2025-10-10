@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'token_store.dart';
-import 'dart:io';
-import 'package:flashcard_app/models/card.dart' as card_model;
-import 'package:flashcard_app/models/deck.dart' as deck_model;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flashcard_app/models/card.dart' as card_model;
+import 'package:flashcard_app/models/deck.dart' as deck_model;
+import 'dart:io';
+import 'token_store.dart';
 
 class ApiService {
   final TokenStore _tokenStore;
@@ -336,15 +336,37 @@ class ApiService {
   }
 
   Future<void> markCardAsLearned(int cardId) async {
-    final token = await _tokenStore.getToken();
-    final response = await _dio.post(
-      '/api/cards/$cardId/learned', // cardId is converted to String in URL
-      options: Options(
-        headers: {'Authorization': 'Bearer $token'},
-      ),
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Failed to mark card as learned');
+    try {
+      final response = await _dio.post(
+        '/api/cards/$cardId/learned',
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to mark card as learned: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Mark card as learned error: $e');
+      throw Exception('Failed to mark card as learned: $e');
+    }
+  }
+
+  Future<void> markCardReview(int cardId, int quality, double easiness, int repetition, int interval, DateTime nextReviewDate) async {
+    try {
+      final response = await _dio.post(
+        '/api/cards/$cardId/review',
+        data: {
+          'quality': quality,
+          'easiness': easiness,
+          'repetition': repetition,
+          'interval': interval,
+          'next_review_date': nextReviewDate.toIso8601String(),
+        },
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to mark card review: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Mark card review error: $e');
+      throw Exception('Failed to mark card review: $e');
     }
   }
 }

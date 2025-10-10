@@ -1,6 +1,6 @@
 {
   "@@locale": "vi",
-  "lexiFlash": "LexiFlash",
+  "lexiFlash": "⚡ LexiFlash",
   "settings_title": "Cài đặt",
   "font_size": "Cỡ chữ",
   "theme": "Giao diện",
@@ -106,5 +106,52 @@
     "placeholders": {
       "deckId": {}
     }
+  },
+
+  "learnDeckTitle": "Học Deck #{deckId}",
+  "@learnDeckTitle": {
+    "description": "Title for the Learn Deck page, displaying the deck ID",
+    "placeholders": {
+      "deckId": {}
+    }
+  },
+  "noCardsToReview": "Không có thẻ nào cần ôn tập hôm nay.",
+  "@noCardsToReview": {
+    "description": "Message when there are no cards to review"
+  },
+  "again": "Học lại",
+  "@again": {
+    "description": "Label for the 'Again' review button"
+  },
+  "hard": "Khó",
+  "@hard": {
+    "description": "Label for the 'Hard' review button"
+  },
+  "normal": "Bình thường",
+  "@normal": {
+    "description": "Label for the 'Normal' review button"
+  },
+  "easy": "Dễ",
+  "@easy": {
+    "description": "Label for the 'Easy' review button"
+  },
+  "@progress": {
+    "description": "Label for the learning progress indicator"
+  },
+  "reviewAgain": "Thẻ sẽ được ôn lại sau 1 phút.",
+  "@reviewAgain": {
+    "description": "Message shown when a card is marked to be reviewed again"
+  },
+  "reviewHard": "Thẻ sẽ được ôn lại sau 5 phút.",
+  "@reviewHard": {
+    "description": "Message shown when a card is marked as hard"
+  },
+  "reviewNormal": "Thẻ sẽ được ôn lại sau 10 phút.",
+  "@reviewNormal": {
+    "description": "Message shown when a card is marked as normal"
+  },
+  "reviewEasy": "Thẻ sẽ được ôn lại sau 1 ngày.",
+  "@reviewEasy": {
+    "description": "Message shown when a card is marked as easy"
   }
 }

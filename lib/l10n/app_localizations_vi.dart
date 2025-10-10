@@ -9,7 +9,7 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get lexiFlash => 'LexiFlash';
+  String get lexiFlash => '⚡ LexiFlash';
 
   @override
   String get settings_title => 'Cài đặt';
@@ -335,6 +335,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String learnDeckTitle(Object deckId) {
-    return 'Học bộ thẻ #$deckId';
+    return 'Học Deck #$deckId';
   }
+
+  @override
+  String get noCardsToReview => 'Không có thẻ nào cần ôn tập hôm nay.';
+
+  @override
+  String get again => 'Học lại';
+
+  @override
+  String get hard => 'Khó';
+
+  @override
+  String get normal => 'Bình thường';
+
+  @override
+  String get easy => 'Dễ';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String get reviewAgain => 'Thẻ sẽ được ôn lại sau 1 phút.';
+
+  @override
+  String get reviewHard => 'Thẻ sẽ được ôn lại sau 5 phút.';
+
+  @override
+  String get reviewNormal => 'Thẻ sẽ được ôn lại sau 10 phút.';
+
+  @override
+  String get reviewEasy => 'Thẻ sẽ được ôn lại sau 1 ngày.';
 }
