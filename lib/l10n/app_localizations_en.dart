@@ -232,6 +232,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAudio => 'removeAudio';
 
   @override
+  String get errorNavigating => 'errorNavigating';
+
+  @override
   String get noAudio => 'No audio';
 
   @override
@@ -315,6 +318,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorMarkingCard => 'errorMarkingCard';
 
   @override
+  String get notDeckOwner => 'notDeckOwner';
+
+  @override
+  String get retry => 'retry';
+
+  @override
   String get cardLearnedSuccessfully => 'Card learned successfully';
 
   @override
@@ -370,4 +379,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewEasy => 'The card will be reviewed again after 1 day.';
+
+  @override
+  String get accountDetails => 'Cccount details';
+
+  @override
+  String get statistics => 'Statistics';
+
+  @override
+  String get help => 'Help';
 }

@@ -73,6 +73,7 @@
   "example": "example",
   "removeImage" : "removeImage",
   "removeAudio": "removeAudio",
+  "errorNavigating": "errorNavigating",
   "noAudio" : "No audio",
   "errorPlayingAudio" : "Error playing audio",
   "errorLoadingDeck": "Error loading deck",
@@ -99,6 +100,8 @@
   "noMoreCards": "No more cards",
   "markCardAsLearned": "Mark card as learned",
   "errorMarkingCard": "errorMarkingCard",
+  "notDeckOwner": "notDeckOwner",
+  "retry": "retry",
 
   "cardLearnedSuccessfully": "Card learned successfully",
   "errorMarkingCardLearned": "Error marking Card Learned",
@@ -161,5 +164,9 @@
   "reviewEasy": "The card will be reviewed again after 1 day.",
   "@reviewEasy": {
     "description": "Message shown when a card is marked as easy"
-  }
+  },
+
+  "accountDetails": "Cccount details",
+  "statistics": "Statistics",
+  "help" : "Help"
 }

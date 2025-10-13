@@ -1,43 +1,47 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class TokenStore extends ChangeNotifier {
-  final _s = const FlutterSecureStorage();
-  static const _key = 'access_token';
-  String? _token; // Cache trong RAM
+class TokenStore with ChangeNotifier {
+  String? _token;
+  String? _userId;
 
   TokenStore() {
-    _init(); // Gọi init() ngay khi khởi tạo
+    _loadToken();
   }
 
-  Future<void> _init() async {
-    _token = await _s.read(key: _key);
-    print('Token initialized: $_token'); // Debug log
-    notifyListeners(); // Cập nhật khi token được tải
-  }
-
-  // Getter bất đồng bộ, ưu tiên dùng trong ApiService
-  Future<String?> getToken() async {
-    if (_token == null) {
-      await _init(); // Tải lại nếu cache rỗng
-    }
-    return _token ?? await _s.read(key: _key);
-  }
-
-  // Getter đồng bộ cho redirect (nếu cần, nhưng không khuyến khích)
   String? get token => _token;
 
-  Future<void> save(String token) async {
+  String? get userId => _userId;
+
+  Future<String?> getToken() async => _token;
+
+  Future<String?> getUserId() async => _userId;
+
+  Future<void> _loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    _userId = prefs.getString('user_id');
+    print('TokenStore loaded: token=$_token, userId=$_userId');
+    notifyListeners();
+  }
+
+  Future<void> save(String token, String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setString('user_id', userId);
     _token = token;
-    await _s.write(key: _key, value: token);
-    print('Token saved: $token'); // Debug log
-    notifyListeners(); // Cập nhật cho GoRouter
+    _userId = userId;
+    print('TokenStore saved: token=$token, userId=$userId');
+    notifyListeners();
   }
 
   Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_id');
     _token = null;
-    await _s.delete(key: _key);
-    print('Token cleared'); // Debug log
+    _userId = null;
+    print('TokenStore cleared');
     notifyListeners();
   }
 }

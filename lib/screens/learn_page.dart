@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../models/deck.dart' as deck_model;
 import '../core/settings/settings_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/deck_provider.dart';
 
 class LearnPage extends StatefulWidget {
   final ApiService api;
@@ -15,28 +16,33 @@ class LearnPage extends StatefulWidget {
   State<LearnPage> createState() => _LearnPageState();
 }
 
-class _LearnPageState extends State<LearnPage> {
-  late Future<List<deck_model.Deck>> _decksFuture;
-
+class _LearnPageState extends State<LearnPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    print('Khởi tạo LearnPage');
+    WidgetsBinding.instance.addObserver(this);
     _refreshDecks();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && mounted) {
+      print('LearnPage hiển thị lại');
+      _refreshDecks();
+    }
   }
 
   void _refreshDecks() {
     print('Refreshing decks for LearnPage');
-    setState(() {
-      _decksFuture = widget.api.getDecks();
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant LearnPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.api != widget.api) {
-      _refreshDecks();
-    }
+    widget.api.refreshDecks();
   }
 
   @override
@@ -57,7 +63,7 @@ class _LearnPageState extends State<LearnPage> {
                     width: double.infinity,
                     color: Colors.red,
                     child: Text(
-                      AppLocalizations.of(context)!.learn ?? 'Learn',
+                      AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -66,21 +72,32 @@ class _LearnPageState extends State<LearnPage> {
                     ),
                   ),
                   Expanded(
-                    child: FutureBuilder<List<deck_model.Deck>>(
-                      future: _decksFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                    child: Consumer<DeckProvider>(
+                      builder: (context, deckProvider, child) {
+                        print('DeckProvider state: loading=${deckProvider.isLoading}, decks=${deckProvider.decks.length}, error=${deckProvider.error}');
+                        if (deckProvider.isLoading) {
                           return const Center(child: CircularProgressIndicator());
                         }
-                        if (snapshot.hasError) {
+                        if (deckProvider.error != null) {
                           return Center(
-                            child: Text(
-                              '${AppLocalizations.of(context)!.errorLoadingDecks ?? 'Error'}: ${snapshot.error}',
-                              style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${AppLocalizations.of(context)!.errorLoadingDecks ?? 'Error'}: ${deckProvider.error}',
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _refreshDecks,
+                                  child: Text(AppLocalizations.of(context)!.retry ?? 'Retry'),
+                                ),
+                              ],
                             ),
                           );
                         }
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        if (deckProvider.decks.isEmpty) {
                           return Center(
                             child: Text(
                               AppLocalizations.of(context)!.noDecks ?? 'No decks available',
@@ -89,91 +106,124 @@ class _LearnPageState extends State<LearnPage> {
                           );
                         }
 
-                        final decks = snapshot.data!;
+                        final decks = deckProvider.decks;
                         return Container(
                           color: Theme.of(context).colorScheme.surface,
-                          padding: const EdgeInsets.all(12),
-                          child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          child: GridView.builder(
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.8,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
                             itemCount: decks.length,
                             itemBuilder: (context, index) {
                               final deck = decks[index];
-                              return Card(
-                                color: Theme.of(context).cardColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
                                     color: Theme.of(context).brightness == Brightness.dark
                                         ? Colors.white.withOpacity(0.2)
                                         : Colors.grey.withOpacity(0.3),
-                                    width: 1.0,
+                                    width: 1.5,
                                   ),
                                 ),
-                                margin: const EdgeInsets.symmetric(vertical: 6.0),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        context.go('/app/learn-deck/${deck.id}');
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [Colors.red.shade400, Colors.red.shade600],
+                                                ),
+                                                borderRadius: BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.red.withOpacity(0.3),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Icon(
+                                                Icons.school_rounded,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
                                             Text(
                                               deck.name,
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                fontWeight: FontWeight.w500,
+                                                fontWeight: FontWeight.bold,
                                                 color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              deck.description,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                               ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${AppLocalizations.of(context)!.cards ?? 'Cards'}: ${deck.cardsCount}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                            const SizedBox(height: 6),
+                                            Expanded(
+                                              child: Text(
+                                                deck.description,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                  height: 1.3,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
                                               ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${AppLocalizations.of(context)!.createdDate ?? 'Created'}: ${deck.createdAt.toLocal().toString().split(' ')[0]}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context).brightness == Brightness.dark
+                                                    ? Colors.grey.shade700.withOpacity(0.5)
+                                                    : Colors.grey.shade200,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.style_rounded,
+                                                    size: 14,
+                                                    color: Colors.red.shade600,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${deck.cardsCount} ${AppLocalizations.of(context)!.cards ?? 'cards'}',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      ElevatedButton.icon(
-                                        icon: const Icon(Icons.school, size: 20),
-                                        label: Text(AppLocalizations.of(context)!.learn ?? 'Learn'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(context).brightness == Brightness.light
-                                              ? Colors.red
-                                              : Colors.red.shade700, // Red for light mode, darker red for dark mode
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          context.go('/app/learn-deck/${deck.id}');
-                                        },
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -185,46 +235,6 @@ class _LearnPageState extends State<LearnPage> {
                   ),
                 ],
               ),
-            ),
-          ),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).bottomAppBarTheme.color,
-              border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _BottomNavItem(
-                  icon: Icons.home,
-                  label: AppLocalizations.of(context)!.home ?? 'Home',
-                  active: false,
-                  onTap: () => context.go('/home'),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.library_books,
-                  label: AppLocalizations.of(context)!.deck ?? 'Deck',
-                  active: false,
-                  onTap: () => context.go('/app/decks'),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.school,
-                  label: AppLocalizations.of(context)!.learn ?? 'Learn',
-                  active: true,
-                  onTap: () => context.go('/app/learn'),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.account_circle,
-                  label: AppLocalizations.of(context)!.profile ?? 'Profile',
-                  active: false,
-                  onTap: () => context.go('/app/profile'),
-                  context: context,
-                ),
-              ],
             ),
           ),
         );

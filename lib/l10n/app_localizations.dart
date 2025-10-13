@@ -530,6 +530,12 @@ abstract class AppLocalizations {
   /// **'removeAudio'**
   String get removeAudio;
 
+  /// No description provided for @errorNavigating.
+  ///
+  /// In en, this message translates to:
+  /// **'errorNavigating'**
+  String get errorNavigating;
+
   /// No description provided for @noAudio.
   ///
   /// In en, this message translates to:
@@ -692,6 +698,18 @@ abstract class AppLocalizations {
   /// **'errorMarkingCard'**
   String get errorMarkingCard;
 
+  /// No description provided for @notDeckOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'notDeckOwner'**
+  String get notDeckOwner;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'retry'**
+  String get retry;
+
   /// No description provided for @cardLearnedSuccessfully.
   ///
   /// In en, this message translates to:
@@ -799,6 +817,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The card will be reviewed again after 1 day.'**
   String get reviewEasy;
+
+  /// No description provided for @accountDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Cccount details'**
+  String get accountDetails;
+
+  /// No description provided for @statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// No description provided for @help.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get help;
 }
 
 class _AppLocalizationsDelegate

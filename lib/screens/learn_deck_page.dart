@@ -32,11 +32,9 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   bool isLoading = true;
   bool isAudioPlaying = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  static const String _baseUrl = 'http://10.12.216.12:8080';
-  int _selectedIndex = 2;
+  static const String _baseUrl = 'http://172.31.219.12:8080';
   late Future<deck_model.Deck> _deckFuture;
   Timer? _refreshTimer;
-  // Theo dõi thẻ "Học lại" và thời gian nextReviewDate
   final Map<int, DateTime> _reviewAgainCards = {};
 
   @override
@@ -49,7 +47,6 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         isAudioPlaying = state == PlayerState.playing;
       });
     });
-    // Timer kiểm tra thẻ cần ôn lại mỗi 30 giây
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       _loadCards();
     });
@@ -66,20 +63,15 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     try {
       final data = await widget.api.getCardsToReview(widget.deckId);
       setState(() {
-        // Lọc thẻ để tránh trùng lặp và chỉ thêm thẻ "Học lại" một lần
         final currentCardId = reviewCards.isNotEmpty && currentIndex < reviewCards.length
             ? reviewCards[currentIndex].id
             : null;
         final now = DateTime.now();
         final newCards = data.where((card) {
-          // Không thêm thẻ đang hiển thị
           if (card.id == currentCardId) return false;
-          // Nếu thẻ là "Học lại", kiểm tra xem đã được thêm chưa
           if (_reviewAgainCards.containsKey(card.id)) {
-            // Chỉ thêm nếu đã qua nextReviewDate và chưa được đánh giá lại
             return now.isAfter(_reviewAgainCards[card.id]!) && !reviewCards.any((c) => c.id == card.id);
           }
-          // Thêm thẻ mới hoặc thẻ không phải "Học lại"
           return !reviewCards.any((c) => c.id == card.id);
         }).toList();
         reviewCards.addAll(newCards);
@@ -88,6 +80,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     } catch (e) {
       print('Lỗi khi load cards: $e');
       setState(() => isLoading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingCards ?? 'Lỗi khi tải thẻ'}: $e')),
       );
@@ -100,28 +93,26 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     int interval = card.interval;
     DateTime nextReviewDate;
 
-    // Cập nhật easiness
     easiness += (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
     easiness = easiness < 1.3 ? 1.3 : easiness;
 
-    // Logic thời gian theo quality
     switch (quality) {
-      case 0: // Học lại
+      case 0:
         repetition = 0;
         interval = 1;
         nextReviewDate = DateTime.now().add(const Duration(minutes: 1));
         break;
-      case 2: // Khó
+      case 2:
         repetition = repetition > 0 ? repetition : 0;
         interval = (interval * 0.5).round().clamp(1, interval);
         nextReviewDate = DateTime.now().add(const Duration(minutes: 5));
         break;
-      case 3: // Bình thường
+      case 3:
         repetition += 1;
         interval = (interval * 1.2).round().clamp(1, double.infinity.toInt());
         nextReviewDate = DateTime.now().add(const Duration(minutes: 10));
         break;
-      case 5: // Dễ
+      case 5:
         repetition += 1;
         interval = (interval * 2.0).round().clamp(1, double.infinity.toInt());
         nextReviewDate = DateTime.now().add(const Duration(days: 1));
@@ -144,15 +135,15 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         card.repetition = repetition;
         card.interval = interval;
         card.nextReviewDate = nextReviewDate;
-        // Lưu thẻ "Học lại" vào _reviewAgainCards
         if (quality == 0) {
           _reviewAgainCards[card.id] = nextReviewDate;
         } else {
-          _reviewAgainCards.remove(card.id); // Xóa nếu đánh giá khác "Học lại"
+          _reviewAgainCards.remove(card.id);
         }
       });
     } catch (e) {
       print('Lỗi khi cập nhật review: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorMarkingCardLearned ?? 'Lỗi khi cập nhật thẻ')),
       );
@@ -165,9 +156,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     _calculateSM2(card, quality);
 
     setState(() {
-      showBack = false; // Đảm bảo thẻ mới hiển thị mặt trước
+      showBack = false;
       if (quality == 0 || quality == 2) {
-        // Di chuyển thẻ "Học lại" hoặc "Khó" ra cuối danh sách
         if (reviewCards.length > 1) {
           final reviewedCard = reviewCards.removeAt(currentIndex);
           reviewCards.add(reviewedCard);
@@ -197,7 +187,6 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           );
         }
       } else {
-        // Xóa thẻ "Bình thường" hoặc "Dễ" khỏi danh sách
         reviewCards.removeAt(currentIndex);
         if (currentIndex >= reviewCards.length) {
           currentIndex = 0;
@@ -213,14 +202,13 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           ),
         );
       }
-      // Chuyển sang thẻ tiếp theo nếu có
       _nextCard();
     });
   }
 
   void _nextCard() {
     setState(() {
-      showBack = false; // Đảm bảo thẻ mới hiển thị mặt trước
+      showBack = false;
       if (currentIndex < reviewCards.length - 1) {
         currentIndex++;
       } else if (reviewCards.isEmpty) {
@@ -236,7 +224,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         currentIndex = 0;
         reviewCards = [];
       } else {
-        currentIndex = 0; // Quay lại đầu danh sách nếu còn thẻ
+        currentIndex = 0;
       }
     });
   }
@@ -258,8 +246,9 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
       }
     } catch (e) {
       print('Lỗi khi phát âm thanh: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.errorPlayingAudio ?? 'Không thể phát âm thanh. Kiểm tra kết nối hoặc URL.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorPlayingAudio ?? 'Không thể phát âm thanh.')),
       );
     }
   }
@@ -286,29 +275,11 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     );
   }
 
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-    switch (index) {
-      case 0:
-        context.go('/home');
-        break;
-      case 1:
-        context.go('/app/decks');
-        break;
-      case 2:
-        context.go('/app/learn');
-        break;
-      case 3:
-        context.go('/app/profile');
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth * 0.85; // 85% chiều rộng màn hình
-    final cardHeight = cardWidth * 1.5; // Tỷ lệ 2:3 cho thẻ
+    final cardWidth = screenWidth * 0.85;
+    final cardHeight = cardWidth * 1.4;
 
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
@@ -318,297 +289,351 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           ),
           child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.background,
-            appBar: AppBar(
-              title: FutureBuilder<deck_model.Deck>(
-                future: _deckFuture,
-                builder: (context, snapshot) {
-                  String title = AppLocalizations.of(context)!.learnDeckTitle(widget.deckId.toString()) ?? 'Learn Deck #${widget.deckId}';
-                  if (snapshot.hasData && snapshot.data!.name.isNotEmpty) {
-                    title = snapshot.data!.name;
-                  }
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Stack(
                     children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (!isLoading && reviewCards.isNotEmpty)
-                        Text(
-                          '${currentIndex + 1}/${reviewCards.length}',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.red : Colors.red.shade700,
-              foregroundColor: Colors.white,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/app/learn'),
-              ),
-            ),
-            body: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : reviewCards.isEmpty
-                ? Center(
-              child: Text(
-                AppLocalizations.of(context)!.noCardsToReview ?? 'Không có thẻ nào cần ôn tập hôm nay.',
-                style: TextStyle(
-                  fontSize: 16 * settings.fontScale,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
-              ),
-            )
-                : SingleChildScrollView(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 20),
-                    FlipCard(
-                      direction: FlipDirection.HORIZONTAL,
-                      front: _buildCardSide(
-                        context,
-                        width: cardWidth,
-                        height: cardHeight,
-                        content: Text(
-                          reviewCards[currentIndex].front,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24 * settings.fontScale,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      back: _buildCardSide(
-                        context,
-                        width: cardWidth,
-                        height: cardHeight,
-                        content: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              reviewCards[currentIndex].back,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 20 * settings.fontScale,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (reviewCards[currentIndex].phonetic != null && reviewCards[currentIndex].phonetic!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  '[${reviewCards[currentIndex].phonetic}]',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 16 * settings.fontScale,
-                                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
-                                    fontStyle: FontStyle.italic,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        width: double.infinity,
+                        color: Colors.red,
+                        child: FutureBuilder<deck_model.Deck>(
+                          future: _deckFuture,
+                          builder: (context, snapshot) {
+                            String title = 'Deck #${widget.deckId}';
+                            if (snapshot.hasData && snapshot.data!.name.isNotEmpty) {
+                              title = snapshot.data!.name;
+                            }
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (!isLoading && reviewCards.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${currentIndex + 1}/${reviewCards.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => context.go('/app/learn'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Expanded(
+                    child: Container(
+                      color: Theme.of(context).colorScheme.surface,
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+                          : reviewCards.isEmpty
+                          ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.celebration_rounded,
+                              size: 80,
+                              color: Colors.green.shade400,
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              AppLocalizations.of(context)!.noCardsToReview ?? 'Không có thẻ nào cần ôn tập!',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
+                              textAlign: TextAlign.center,
+                            ),
                             const SizedBox(height: 8),
-                            if (reviewCards[currentIndex].imageUrl != null && reviewCards[currentIndex].imageUrl!.isNotEmpty)
-                              GestureDetector(
-                                onTap: () => _showImageDialog(reviewCards[currentIndex].imageUrl!),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: CachedNetworkImage(
-                                    imageUrl: reviewCards[currentIndex].imageUrl!.startsWith('http')
-                                        ? reviewCards[currentIndex].imageUrl!
-                                        : '$_baseUrl${reviewCards[currentIndex].imageUrl}',
-                                    height: 200,
-                                    width: 200,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                    errorWidget: (context, url, error) => const Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                      color: Colors.white70,
+                            Text(
+                              'Bạn đã hoàn thành hết thẻ hôm nay',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          : SingleChildScrollView(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 30),
+                              FlipCard(
+                                direction: FlipDirection.HORIZONTAL,
+                                front: _buildCardSide(
+                                  context,
+                                  width: cardWidth,
+                                  height: cardHeight,
+                                  content: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.school_rounded,
+                                        size: 40,
+                                        color: Colors.white.withOpacity(0.3),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        reviewCards[currentIndex].front,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        'Nhấn để xem đáp án',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.white.withOpacity(0.7),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                back: _buildCardSide(
+                                  context,
+                                  width: cardWidth,
+                                  height: cardHeight,
+                                  content: SingleChildScrollView(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          reviewCards[currentIndex].back,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        if (reviewCards[currentIndex].phonetic != null && reviewCards[currentIndex].phonetic!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 12),
+                                            child: Text(
+                                              '[${reviewCards[currentIndex].phonetic}]',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.white.withOpacity(0.8),
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          ),
+                                        const SizedBox(height: 16),
+                                        if (reviewCards[currentIndex].imageUrl != null && reviewCards[currentIndex].imageUrl!.isNotEmpty)
+                                          GestureDetector(
+                                            onTap: () => _showImageDialog(reviewCards[currentIndex].imageUrl!),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: CachedNetworkImage(
+                                                imageUrl: reviewCards[currentIndex].imageUrl!.startsWith('http')
+                                                    ? reviewCards[currentIndex].imageUrl!
+                                                    : '$_baseUrl${reviewCards[currentIndex].imageUrl}',
+                                                height: 180,
+                                                width: 180,
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                                errorWidget: (context, url, error) => const Icon(
+                                                  Icons.broken_image,
+                                                  size: 50,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        if (reviewCards[currentIndex].audioUrl != null && reviewCards[currentIndex].audioUrl!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 12),
+                                            child: IconButton(
+                                              icon: Icon(
+                                                isAudioPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                                color: Colors.white,
+                                                size: 48,
+                                              ),
+                                              onPressed: () => _playAudio(reviewCards[currentIndex].audioUrl),
+                                            ),
+                                          ),
+                                        if (reviewCards[currentIndex].example != null && reviewCards[currentIndex].example!.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 16),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '${AppLocalizations.of(context)!.example ?? 'Ví dụ'}: ${reviewCards[currentIndex].example}',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white.withOpacity(0.9),
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                 ),
+                                onFlip: () => setState(() => showBack = !showBack),
                               ),
-                            const SizedBox(height: 8),
-                            if (reviewCards[currentIndex].audioUrl != null && reviewCards[currentIndex].audioUrl!.isNotEmpty)
-                              AnimatedScale(
-                                scale: isAudioPlaying ? 1.2 : 1.0,
-                                duration: const Duration(milliseconds: 200),
-                                child: IconButton(
-                                  icon: Icon(
-                                    isAudioPlaying ? Icons.pause : Icons.volume_up,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    size: 30,
+                              const SizedBox(height: 30),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (!isLoading && reviewCards.isNotEmpty)
+                    Container(
+                      color: Theme.of(context).colorScheme.surface,
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade700,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              onPressed: () => _reviewCard(0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.refresh_rounded, size: 20),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AppLocalizations.of(context)!.again ?? 'Học lại',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                   ),
-                                  onPressed: () => _playAudio(reviewCards[currentIndex].audioUrl),
-                                  tooltip: isAudioPlaying
-                                      ? AppLocalizations.of(context)!.pauseAudio ?? 'Tạm dừng âm thanh'
-                                      : AppLocalizations.of(context)!.playAudio ?? 'Phát âm thanh',
-                                ),
+                                ],
                               ),
-                            const SizedBox(height: 8),
-                            if (reviewCards[currentIndex].example != null && reviewCards[currentIndex].example!.isNotEmpty)
-                              Text(
-                                '${AppLocalizations.of(context)!.example ?? 'Ví dụ'}: ${reviewCards[currentIndex].example}',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14 * settings.fontScale,
-                                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
-                          ],
-                        ),
+                              onPressed: () => _reviewCard(2),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.sentiment_dissatisfied_rounded, size: 20),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AppLocalizations.of(context)!.hard ?? 'Khó',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              onPressed: () => _reviewCard(3),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.sentiment_neutral_rounded, size: 20),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AppLocalizations.of(context)!.normal ?? 'Bình thường',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              onPressed: () => _reviewCard(5),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.sentiment_very_satisfied_rounded, size: 20),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    AppLocalizations.of(context)!.easy ?? 'Dễ',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      onFlip: () => setState(() => showBack = !showBack),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface,
-                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _BottomNavItem(
-                    icon: Icons.home,
-                    label: AppLocalizations.of(context)!.home ?? 'Home',
-                    active: _selectedIndex == 0,
-                    onTap: () => _onItemTapped(0),
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.library_books,
-                    label: AppLocalizations.of(context)!.deck ?? 'Deck',
-                    active: _selectedIndex == 1,
-                    onTap: () => _onItemTapped(1),
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.school,
-                    label: AppLocalizations.of(context)!.learn ?? 'Learn',
-                    active: _selectedIndex == 2,
-                    onTap: () => _onItemTapped(2),
-                    context: context,
-                  ),
-                  _BottomNavItem(
-                    icon: Icons.account_circle,
-                    label: AppLocalizations.of(context)!.profile ?? 'Profile',
-                    active: _selectedIndex == 3,
-                    onTap: () => _onItemTapped(3),
-                    context: context,
-                  ),
                 ],
               ),
             ),
-            persistentFooterButtons: reviewCards.isEmpty
-                ? null
-                : [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade600, // Xám cho "Học lại"
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _reviewCard(0),
-                        child: Text(
-                          AppLocalizations.of(context)!.again ?? 'Học lại',
-                          style: TextStyle(fontSize: 14 * settings.fontScale),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade400, // Đỏ nhạt cho "Khó"
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _reviewCard(2),
-                        child: Text(
-                          AppLocalizations.of(context)!.hard ?? 'Khó',
-                          style: TextStyle(fontSize: 14 * settings.fontScale),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade600, // Cam cho "Bình thường"
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _reviewCard(3),
-                        child: Text(
-                          AppLocalizations.of(context)!.normal ?? 'Bình thường',
-                          style: TextStyle(fontSize: 14 * settings.fontScale),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade600, // Xanh lá cho "Dễ"
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => _reviewCard(5),
-                        child: Text(
-                          AppLocalizations.of(context)!.easy ?? 'Dễ',
-                          style: TextStyle(fontSize: 14 * settings.fontScale),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ),
         );
       },
@@ -624,74 +649,22 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Colors.red.shade500,
+            Colors.red.shade700,
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Colors.red.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(child: content),
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  final BuildContext context;
-
-  const _BottomNavItem({
-    required this.icon,
-    this.label = "",
-    this.active = false,
-    this.onTap,
-    required this.context,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = Theme.of(context).iconTheme.size ?? 24;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: active
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              size: iconSize,
-            ),
-            if (label.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: active
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        padding: const EdgeInsets.all(24.0),
+        child: content,
       ),
     );
   }

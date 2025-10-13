@@ -26,16 +26,14 @@ class _CardsPageState extends State<CardsPage> {
   late Future<deck_model.Deck> _deckFuture;
   bool _isOwner = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  int _selectedIndex = 1;
 
   @override
   void initState() {
     super.initState();
     _refreshCards();
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    userProvider.loadUser();
     _deckFuture = _fetchDeck();
-    print('InitState - Deck ID: ${widget.deckId}, User ID: ${userProvider.userId}');
+    _checkOwnerStatus();
+    print('Khởi tạo CardsPage: deckId=${widget.deckId}, deck=${widget.deck?.toJson()}');
   }
 
   Future<deck_model.Deck> _fetchDeck() async {
@@ -44,16 +42,16 @@ class _CardsPageState extends State<CardsPage> {
       if (mounted) {
         _updateOwnerStatus(deck);
       }
-      print('Fetched Deck - ID: ${deck.id}, User ID: ${deck.userId}, _isOwner: $_isOwner');
+      print('Lấy Deck thành công - ID: ${deck.id}, User ID: ${deck.userId}, _isOwner: $_isOwner');
       return deck;
     } catch (e) {
-      print('Error fetching deck: $e');
-      rethrow;
+      print('Lỗi lấy deck: $e');
+      throw Exception('Tải deck thất bại: $e');
     }
   }
 
   void _refreshCards() {
-    print('Refreshing cards and deck for deckId: ${widget.deckId}');
+    print('Làm mới cards cho deckId: ${widget.deckId}');
     if (mounted) {
       setState(() {
         _cardsFuture = widget.api.getCards(widget.deckId);
@@ -62,62 +60,64 @@ class _CardsPageState extends State<CardsPage> {
     }
   }
 
+  void _checkOwnerStatus() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.userId != null && widget.deck != null) {
+      _isOwner = userProvider.userId == widget.deck!.userId;
+      print('Kiểm tra _isOwner: $_isOwner, User ID: ${userProvider.userId}, Deck User ID: ${widget.deck!.userId}');
+    }
+    if (mounted) setState(() {});
+  }
+
   void _updateOwnerStatus(deck_model.Deck? deck) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (mounted && deck != null) {
       _isOwner = userProvider.userId != null && userProvider.userId == deck.userId;
-      print('Updated _isOwner: $_isOwner, User ID: ${userProvider.userId}, Deck User ID: ${deck.userId}');
-      if (mounted) setState(() {});
+      print('Cập nhật _isOwner: $_isOwner, User ID: ${userProvider.userId}, Deck User ID: ${deck.userId}');
     }
+    if (mounted) setState(() {});
   }
 
   Future<void> _playAudio(String? audioUrl) async {
     if (audioUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.noAudio ?? 'Không có audio')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.noAudio ?? 'Không có âm thanh')),
       );
       return;
     }
 
-    final fullUrl = 'http://10.12.216.12:8080$audioUrl';
+    final fullUrl = 'http://172.31.219.12:8080$audioUrl';
     try {
       await _audioPlayer.stop();
       await _audioPlayer.play(UrlSource(fullUrl));
+      print('Phát âm thanh: $fullUrl');
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context)!.errorPlayingAudio ?? 'Lỗi phát audio'}: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.errorPlayingAudio ?? 'Lỗi phát âm thanh'}: $e')),
       );
-    }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-    switch (index) {
-      case 0:
-        context.go('/home');
-        break;
-      case 1:
-        context.go('/app/decks');
-        break;
-      case 2:
-        context.go('/app/learn');
-        break;
-      case 3:
-        context.go('/app/profile');
-        break;
+      print('Lỗi phát âm thanh: $e');
     }
   }
 
   void _editCard(card_model.Card card) async {
-    print('Navigating to edit card with ID: ${card.id}');
-    final updatedCard = await context.push<card_model.Card>(
-      '/app/deck/${widget.deckId}/edit-card/${card.id}',
-      extra: {'api': widget.api, 'deckId': widget.deckId, 'card': card},
-    );
+    print('Chuyển hướng đến chỉnh sửa card với ID: ${card.id}');
+    try {
+      final updatedCard = await context.push<card_model.Card>(
+        '/app/decks/${widget.deckId}/edit-card/${card.id}',
+        extra: {'api': widget.api, 'deckId': widget.deckId, 'card': card},
+      );
 
-    if (updatedCard != null && mounted) {
-      print('Card updated, refreshing cards for deckId: ${widget.deckId}');
-      _refreshCards();
+      if (updatedCard != null && mounted) {
+        print('Card đã được cập nhật, làm mới cards cho deckId: ${widget.deckId}');
+        _refreshCards();
+      }
+    } catch (e) {
+      print('Lỗi chuyển hướng đến EditCardPage: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi chuyển hướng để chỉnh sửa card: $e')),
+      );
     }
   }
 
@@ -125,8 +125,9 @@ class _CardsPageState extends State<CardsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(AppLocalizations.of(context)!.confirm ?? 'Xác nhận'),
-        content: Text(AppLocalizations.of(context)!.confirmDeleteCard ?? 'Bạn có chắc chắn muốn xoá card này?'),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteCard ?? 'Bạn có chắc muốn xóa thẻ này?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -134,7 +135,8 @@ class _CardsPageState extends State<CardsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(AppLocalizations.of(context)!.delete ?? 'Xoá'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(AppLocalizations.of(context)!.delete ?? 'Xóa'),
           ),
         ],
       ),
@@ -142,30 +144,38 @@ class _CardsPageState extends State<CardsPage> {
 
     if (confirm == true) {
       try {
-        print('Attempting to delete card with ID: ${card.id} from deck ID: ${widget.deckId}');
+        print('Thử xóa card với ID: ${card.id} từ deck ID: ${widget.deckId}');
         await widget.api.deleteCard(widget.deckId, card.id);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.cardDeletedSuccessfully ?? 'Card deleted successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.cardDeletedSuccessfully ?? 'Xóa thẻ thành công')),
         );
         _refreshCards();
       } catch (e) {
-        final errorMessage = e.toString().isNotEmpty ? e.toString() : 'Unknown error';
-        String? localizedError;
-        final localizations = AppLocalizations.of(context);
-        localizedError = localizations?.errorDeletingCard(errorMessage) ?? 'Error: $errorMessage';
+        if (!mounted) return;
+        final errorMessage = e.toString().isNotEmpty ? e.toString() : 'Lỗi không xác định';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizedError)),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingCard(errorMessage) ?? 'Lỗi: $errorMessage')),
         );
-        print('Delete card error: $e');
+        print('Lỗi xóa card: $e');
       }
     }
   }
 
   void _addCard() async {
-    final result = await context.push('/app/deck/${widget.deckId}/add-cards', extra: {'api': widget.api});
-    if (result == true && mounted) {
-      print('Refreshing after add card...');
-      _refreshCards();
+    print('Chuyển hướng đến AddCardPage với deckId: ${widget.deckId}');
+    try {
+      final result = await context.push('/app/decks/${widget.deckId}/add-cards', extra: {'api': widget.api});
+      if (result == true && mounted) {
+        print('Làm mới sau khi thêm card...');
+        _refreshCards();
+      }
+    } catch (e) {
+      print('Lỗi chuyển hướng đến AddCardPage: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi chuyển hướng để thêm card: $e')),
+      );
     }
   }
 
@@ -177,34 +187,42 @@ class _CardsPageState extends State<CardsPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building CardsPage for deckId: ${widget.deckId}, _isOwner: $_isOwner');
+    print('Xây dựng CardsPage cho deckId: ${widget.deckId}, _isOwner: $_isOwner');
     return WillPopScope(
       onWillPop: () async {
-        context.pop();
-        return true;
+        context.go('/app/decks');
+        return false;
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.background,
-        body: FutureBuilder<deck_model.Deck>(
+        body: FutureBuilder(
           future: _deckFuture,
-          builder: (context, deckSnapshot) {
-            if (deckSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+          builder: (context, AsyncSnapshot<deck_model.Deck> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Colors.red));
             }
-            if (deckSnapshot.hasError) {
+            if (snapshot.hasError) {
               return Center(
-                child: Text(
-                  '${AppLocalizations.of(context)!.errorLoadingDeck ?? 'Error loading deck'}: ${deckSnapshot.error}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline_rounded, size: 64, color: Colors.red.shade300),
+                    const SizedBox(height: 16),
+                    Text(
+                      '${AppLocalizations.of(context)!.errorLoadingDeck ?? 'Lỗi tải deck'}: ${snapshot.error}',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               );
             }
 
-            final deck = deckSnapshot.data ?? widget.deck;
+            final deck = snapshot.data ?? widget.deck;
             if (deck == null) {
               return Center(
                 child: Text(
-                  AppLocalizations.of(context)!.noDeckData ?? 'No deck data',
+                  AppLocalizations.of(context)!.noDeckData ?? 'Không có dữ liệu deck',
                   style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                 ),
               );
@@ -219,57 +237,112 @@ class _CardsPageState extends State<CardsPage> {
                   child: SafeArea(
                     child: Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          width: double.infinity,
-                          color: Colors.red,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                deck.name.isNotEmpty ? deck.name : (AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Row(
+                        Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              width: double.infinity,
+                              color: Colors.red,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-
-                                  Text(
-                                    '${AppLocalizations.of(context)!.cards ?? 'Cards'}: ${deck.cardsCount}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                                  Expanded(
+                                    child: Text(
+                                      deck.name.isNotEmpty ? deck.name : (AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash'),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const SizedBox(width: 20),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${deck.cardsCount}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => context.go('/app/decks'),
+                              ),
+                            ),
+                          ],
                         ),
                         Expanded(
                           child: FutureBuilder<List<card_model.Card>>(
                             future: _cardsFuture,
                             builder: (context, snapshot) {
                               if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(child: CircularProgressIndicator(color: Colors.red));
                               }
                               if (snapshot.hasError) {
-                                return Center(
-                                  child: Text(
-                                    '${AppLocalizations.of(context)!.errorLoadingCards ?? 'Error loading cards'}: ${snapshot.error}',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                                return Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.error_outline_rounded, size: 64, color: Colors.red.shade300),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          '${AppLocalizations.of(context)!.errorLoadingCards ?? 'Lỗi tải thẻ'}: ${snapshot.error}',
+                                          style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               }
                               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                return Center(
-                                  child: Text(
-                                    AppLocalizations.of(context)!.noCards ?? 'Không có card',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
+                                return Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.style_rounded,
+                                          size: 80,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          AppLocalizations.of(context)!.noCards ?? 'Chưa có thẻ nào',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Nhấn nút + để thêm thẻ đầu tiên',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               }
@@ -278,138 +351,150 @@ class _CardsPageState extends State<CardsPage> {
 
                               return Container(
                                 color: Theme.of(context).colorScheme.surface,
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(16),
                                 child: ListView.builder(
                                   itemCount: cards.length,
                                   itemBuilder: (context, index) {
                                     final card = cards[index];
-                                    final menuKey = GlobalKey();
-                                    return GestureDetector(
-                                      onTap: () {},
-                                      child: Card(
-                                        color: Theme.of(context).cardColor,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          side: BorderSide(
-                                            color: Theme.of(context).brightness == Brightness.dark
-                                                ? Colors.white.withOpacity(0.2)
-                                                : Colors.grey.withOpacity(0.3),
-                                            width: 1.0,
-                                          ),
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.2)
+                                              : Colors.grey.withOpacity(0.3),
+                                          width: 1.5,
                                         ),
-                                        margin: const EdgeInsets.symmetric(vertical: 6.0),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      card.front ?? 'No front',
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Theme.of(context).colorScheme.onSurface,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      card.back ?? 'No back',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                                      ),
-                                                      maxLines: 2,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    if (card.createdAt != null)
-                                                      Text(
-                                                        '${AppLocalizations.of(context)!.createdDate ?? 'Created'}: ${card.createdAt!.toLocal().toString().split(' ')[0]}',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                                        ),
-                                                      ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Row(
-                                                mainAxisSize: MainAxisSize.min,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  if (card.imageUrl != null)
-                                                    Padding(
-                                                      padding: const EdgeInsets.only(right: 8),
-                                                      child: Image.network(
-                                                        card.imageUrl!,
-                                                        width: 30,
-                                                        height: 30,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder: (context, error, stackTrace) =>
-                                                        const Icon(Icons.broken_image, size: 30),
+                                                  Text(
+                                                    card.front ?? 'Không có mặt trước',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Theme.of(context).colorScheme.onSurface,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    card.back ?? 'Không có mặt sau',
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  if (card.createdAt != null) ...[
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                      '${AppLocalizations.of(context)!.createdDate ?? 'Ngày tạo'}: ${card.createdAt!.toLocal().toString().split(' ')[0]}',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                                       ),
                                                     ),
-                                                  if (card.audioUrl != null)
-                                                    IconButton(
-                                                      icon: const Icon(Icons.volume_up),
-                                                      iconSize: 30,
-                                                      onPressed: () => _playAudio(card.audioUrl),
-                                                      color: Theme.of(context).colorScheme.primary,
-                                                    ),
-                                                  if (_isOwner)
-                                                    IconButton(
-                                                      key: menuKey,
-                                                      icon: const Icon(Icons.more_vert, size: 30, color: Colors.grey),
-                                                      onPressed: () {
-                                                        SchedulerBinding.instance.addPostFrameCallback((_) {
-                                                          final renderBox = menuKey.currentContext?.findRenderObject() as RenderBox?;
-                                                          if (renderBox != null && renderBox.hasSize) {
-                                                            final offset = renderBox.localToGlobal(Offset.zero);
-                                                            final size = renderBox.size;
-                                                            final screenWidth = MediaQuery.of(context).size.width;
-                                                            final menuOffsetX = screenWidth - (offset.dx + size.width) - 20;
-                                                            showMenu(
-                                                              context: context,
-                                                              position: RelativeRect.fromLTRB(
-                                                                offset.dx - menuOffsetX,
-                                                                offset.dy,
-                                                                offset.dx + size.width,
-                                                                offset.dy + size.height,
-                                                              ),
-                                                              items: [
-                                                                PopupMenuItem<String>(
-                                                                  value: 'edit',
-                                                                  child: ListTile(
-                                                                    leading: const Icon(Icons.edit, size: 30),
-                                                                    title: Text(AppLocalizations.of(context)!.edit ?? 'Edit'),
-                                                                  ),
-                                                                ),
-                                                                PopupMenuItem<String>(
-                                                                  value: 'delete',
-                                                                  child: ListTile(
-                                                                    leading: const Icon(Icons.delete, size: 30),
-                                                                    title: Text(AppLocalizations.of(context)!.delete ?? 'Delete'),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ).then((value) {
-                                                              if (value == 'edit') _editCard(card);
-                                                              if (value == 'delete') _deleteCard(card);
-                                                            });
-                                                          } else {
-                                                            print('RenderBox is null or has no size for card ID: ${card.id}');
-                                                          }
-                                                        });
-                                                      },
-                                                    ),
+                                                  ],
                                                 ],
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (card.imageUrl != null)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(right: 8),
+                                                    child: ClipRRect(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      child: Image.network(
+                                                        'http://172.31.219.12:8080${card.imageUrl}',
+                                                        width: 50,
+                                                        height: 50,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) => Container(
+                                                          width: 50,
+                                                          height: 50,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.grey.shade200,
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: const Icon(Icons.broken_image, size: 24),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                if (card.audioUrl != null)
+                                                  Container(
+                                                    margin: const EdgeInsets.only(right: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: IconButton(
+                                                      icon: const Icon(Icons.volume_up_rounded),
+                                                      onPressed: () => _playAudio(card.audioUrl),
+                                                      color: Colors.red.shade600,
+                                                      iconSize: 22,
+                                                      padding: const EdgeInsets.all(8),
+                                                      constraints: const BoxConstraints(),
+                                                    ),
+                                                  ),
+                                                PopupMenuButton<String>(
+                                                  icon: Icon(
+                                                    Icons.more_vert_rounded,
+                                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                                    size: 22,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  onSelected: (value) {
+                                                    print('Chọn hành động cho card ID ${card.id}: $value');
+                                                    if (value == 'edit') {
+                                                      _editCard(card);
+                                                    } else if (value == 'delete') {
+                                                      _deleteCard(card);
+                                                    }
+                                                  },
+                                                  itemBuilder: (BuildContext context) => [
+                                                    PopupMenuItem<String>(
+                                                      value: 'edit',
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(Icons.edit_rounded, size: 20, color: Colors.orange.shade600),
+                                                          const SizedBox(width: 12),
+                                                          Text(AppLocalizations.of(context)!.edit ?? 'Chỉnh sửa'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    PopupMenuItem<String>(
+                                                      value: 'delete',
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(Icons.delete_rounded, size: 20, color: Colors.red.shade600),
+                                                          const SizedBox(width: 12),
+                                                          Text(AppLocalizations.of(context)!.delete ?? 'Xóa'),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     );
@@ -427,108 +512,15 @@ class _CardsPageState extends State<CardsPage> {
             );
           },
         ),
-        floatingActionButton: _isOwner
-            ? FloatingActionButton(
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          foregroundColor: Theme.of(context).colorScheme.onSecondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+        floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
           onPressed: _addCard,
-          child: const Icon(Icons.add, size: 32),
-        )
-            : null,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).bottomAppBarTheme.color ?? Theme.of(context).colorScheme.surface,
-            border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+          icon: const Icon(Icons.add_rounded),
+          label: Text(
+            AppLocalizations.of(context)!.addCard ?? 'Thêm thẻ',
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _BottomNavItem(
-                icon: Icons.home,
-                label: AppLocalizations.of(context)!.home ?? 'Home',
-                active: _selectedIndex == 0,
-                onTap: () => _onItemTapped(0),
-                context: context,
-              ),
-              _BottomNavItem(
-                icon: Icons.library_books,
-                label: AppLocalizations.of(context)!.deck ?? 'Deck',
-                active: _selectedIndex == 1,
-                onTap: () => _onItemTapped(1),
-                context: context,
-              ),
-              _BottomNavItem(
-                icon: Icons.school,
-                label: AppLocalizations.of(context)!.learn ?? 'Learn',
-                active: _selectedIndex == 2,
-                onTap: () => _onItemTapped(2),
-                context: context,
-              ),
-              _BottomNavItem(
-                icon: Icons.account_circle,
-                label: AppLocalizations.of(context)!.profile ?? 'Profile',
-                active: _selectedIndex == 3,
-                onTap: () => _onItemTapped(3),
-                context: context,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  final BuildContext context;
-
-  const _BottomNavItem({
-    required this.icon,
-    this.label = "",
-    this.active = false,
-    this.onTap,
-    required this.context,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = Theme.of(context).iconTheme.size ?? 24;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: active
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              size: iconSize,
-            ),
-            if (label.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: active
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
         ),
       ),
     );

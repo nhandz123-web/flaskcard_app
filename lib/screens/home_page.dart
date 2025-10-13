@@ -6,6 +6,7 @@ import 'package:flashcard_app/providers/user_provider.dart';
 import 'package:flashcard_app/models/deck.dart';
 import 'package:flashcard_app/core/settings/settings_provider.dart';
 import 'package:flashcard_app/l10n/app_localizations.dart';
+import 'package:flashcard_app/providers/deck_provider.dart';
 
 class HomePage extends StatefulWidget {
   final ApiService api;
@@ -16,42 +17,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Deck> decks = [];
-  bool isLoading = true;
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadDecks();
-  }
-
-  Future<void> _loadDecks() async {
-    setState(() => isLoading = true);
-    try {
-      final fetchedDecks = await widget.api.getDecks();
-      setState(() {
-        decks = fetchedDecks;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingDecks ?? 'Error loading decks'}: $e')),
-      );
-    }
+    print('Khởi tạo HomePage');
+    widget.api.refreshDecks();
   }
 
   void _navigateToLearn(BuildContext context) {
-    context.go('/app/learn'); // Navigate to LearnPage
+    context.go('/app/learn');
   }
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
     if (index == 2) {
-      _navigateToLearn(context); // Navigate to LearnPage
+      _navigateToLearn(context);
     } else if (index == 1) {
-      context.go('/app/decks', extra: widget.api);
+      context.go('/app/decks', extra: {'api': widget.api});
     } else if (index == 3) {
       context.go('/app/profile');
     } else if (index == 0) {
@@ -61,8 +45,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<UserProvider, SettingsProvider>(
-      builder: (context, userProvider, settings, child) {
+    print('Xây dựng HomePage');
+    return Consumer3<UserProvider, SettingsProvider, DeckProvider>(
+      builder: (context, userProvider, settings, deckProvider, child) {
+        final totalCards = deckProvider.decks.fold(0, (sum, deck) => sum + deck.cardsCount);
+
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.background,
           body: MediaQuery(
@@ -85,221 +72,318 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                      ),
-                      const SizedBox(height: 10),
-                      Text.rich(
-                        TextSpan(
-                          text: "${AppLocalizations.of(context)!.welcome ?? 'Welcome'} ",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                  Expanded(
+                    child: Container(
+                      color: Theme.of(context).colorScheme.surface,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
                           children: [
-                            TextSpan(
-                              text: userProvider.name ?? 'User',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.w500,
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.red.shade400, Colors.red.shade600],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircleAvatar(
+                                radius: 46,
+                                backgroundColor: Theme.of(context).colorScheme.surface,
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  size: 50,
+                                  color: Colors.red.shade400,
+                                ),
                               ),
                             ),
-                            TextSpan(text: " ${AppLocalizations.of(context)!.welcomeBack ?? 'back'}!"),
+                            const SizedBox(height: 16),
+                            Text(
+                              "${AppLocalizations.of(context)!.welcome ?? 'Xin chào'}, ${userProvider.name ?? 'User'}!",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              AppLocalizations.of(context)!.welcomeBack ?? 'Chào mừng trở lại',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Cards Statistics
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.grey.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  if (deckProvider.isLoading)
+                                    Padding(
+                                      padding: const EdgeInsets.all(20),
+                                      child: CircularProgressIndicator(color: Colors.red),
+                                    )
+                                  else if (deckProvider.error != null)
+                                    Column(
+                                      children: [
+                                        Icon(
+                                          Icons.error_outline_rounded,
+                                          size: 48,
+                                          color: Colors.red.shade300,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          AppLocalizations.of(context)!.errorLoadingDecks ?? 'Lỗi tải dữ liệu',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          deckProvider.error ?? '',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: () => widget.api.refreshDecks(),
+                                          child: Text(AppLocalizations.of(context)!.retry ?? 'Thử lại'),
+                                        ),
+                                      ],
+                                    )
+                                  else if (deckProvider.decks.isEmpty)
+                                      Column(
+                                        children: [
+                                          Icon(
+                                            Icons.auto_stories_rounded,
+                                            size: 48,
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            AppLocalizations.of(context)!.noDecks ?? 'Chưa có bộ thẻ nào',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [Colors.red.shade400, Colors.red.shade600],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.school_rounded,
+                                                  color: Colors.white,
+                                                  size: 28,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      AppLocalizations.of(context)!.dueCards ?? 'Thẻ cần học',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      '$totalCards ${AppLocalizations.of(context)!.cards ?? 'thẻ'}',
+                                                      style: TextStyle(
+                                                        fontSize: 24,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Theme.of(context).colorScheme.onSurface,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.flag_rounded,
+                                                  color: Colors.red.shade600,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  '${AppLocalizations.of(context)!.goal ?? 'Mục tiêu'}: 20 ${AppLocalizations.of(context)!.cardsPerDay ?? 'thẻ/ngày'}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.red.shade700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Learn Now Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                  disabledBackgroundColor: Colors.red.withOpacity(0.6),
+                                ),
+                                onPressed: deckProvider.isLoading || deckProvider.decks.isEmpty
+                                    ? null
+                                    : () => _navigateToLearn(context),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.play_circle_outline_rounded, size: 24),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      AppLocalizations.of(context)!.learnNow ?? 'Học ngay',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Streak
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.grey.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.local_fire_department_rounded,
+                                      color: Colors.orange.shade600,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          AppLocalizations.of(context)!.streak ?? 'Chuỗi học tập',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '7 ${AppLocalizations.of(context)!.days ?? 'ngày'}',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.green.shade400,
+                                    size: 32,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          isLoading
-                              ? AppLocalizations.of(context)!.loading ?? 'Loading...'
-                              : decks.isEmpty
-                              ? AppLocalizations.of(context)!.noDecks ?? 'No decks available'
-                              : "${AppLocalizations.of(context)!.dueCards ?? 'Cards due today'}\n${decks.fold(0, (sum, deck) => sum + deck.cardsCount)} ${AppLocalizations.of(context)!.cards ?? 'cards'} - ${AppLocalizations.of(context)!.goal ?? 'goal'}: 20 ${AppLocalizations.of(context)!.cardsPerDay ?? 'cards/day'}",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 0,
-                        disabledBackgroundColor: Colors.red.withOpacity(0.6),
-                      ),
-                      onPressed: isLoading ? null : () => _navigateToLearn(context),
-                      child: Text(
-                        AppLocalizations.of(context)!.learnNow ?? 'Learn Now',
-                        style: const TextStyle(fontSize: 15),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "${AppLocalizations.of(context)!.streak ?? 'Streak'}: 7 ${AppLocalizations.of(context)!.days ?? 'days'}",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        Icon(
-                          Icons.check_box,
-                          color: Theme.of(context).colorScheme.secondary,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Expanded(child: SizedBox.shrink()),
                 ],
               ),
             ),
           ),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).bottomAppBarTheme.color,
-              border: Border(
-                top: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _BottomNavItem(
-                  icon: Icons.home,
-                  label: AppLocalizations.of(context)!.home ?? 'Home',
-                  active: _selectedIndex == 0,
-                  onTap: () => _onItemTapped(0),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.library_books,
-                  label: AppLocalizations.of(context)!.deck ?? 'Deck',
-                  active: _selectedIndex == 1,
-                  onTap: () => _onItemTapped(1),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.school,
-                  label: AppLocalizations.of(context)!.learn ?? 'Learn',
-                  active: _selectedIndex == 2,
-                  onTap: () => _onItemTapped(2),
-                  context: context,
-                ),
-                _BottomNavItem(
-                  icon: Icons.account_circle,
-                  label: AppLocalizations.of(context)!.profile ?? 'Profile',
-                  active: _selectedIndex == 3,
-                  onTap: () => _onItemTapped(3),
-                  context: context,
-                ),
-              ],
-            ),
-          ),
         );
       },
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  final BuildContext context;
-
-  const _BottomNavItem({
-    required this.icon,
-    this.label = "",
-    this.active = false,
-    this.onTap,
-    required this.context,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = Theme.of(context).iconTheme.size ?? 24;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: active
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              size: iconSize,
-            ),
-            if (label.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: active
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

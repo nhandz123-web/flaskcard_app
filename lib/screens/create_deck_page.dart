@@ -21,6 +21,12 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    print('Khởi tạo CreateDeckPage');
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
@@ -30,7 +36,11 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
   Future<void> _createDeck() async {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.error + ': ' + AppLocalizations.of(context)!.deckNameRequired)),
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context)!.error}: ${AppLocalizations.of(context)!.deckNameRequired}',
+          ),
+        ),
       );
       return;
     }
@@ -42,10 +52,14 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
       if (userId == null) {
         throw Exception('User not logged in - userId is null');
       }
-      print('Creating deck with userId: $userId, name: ${_nameController.text}, description: ${_descriptionController.text}');
+      final userIdInt = int.tryParse(userId);
+      if (userIdInt == null) {
+        throw Exception('Invalid user ID format: $userId');
+      }
+      print('Creating deck with userId: $userIdInt, name: ${_nameController.text}, description: ${_descriptionController.text}');
 
-      final newDeck = await widget.api.createDeck(
-        userId,
+      await widget.api.createDeck(
+        userIdInt,
         _nameController.text,
         _descriptionController.text,
       );
@@ -53,12 +67,12 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.deckCreatedSuccess)),
       );
-      context.go('/app/decks');
+      context.pop(true);
     } catch (e) {
       if (!mounted) return;
       print('Error creating deck: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.error + ': $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context)!.error}: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -67,6 +81,7 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('Xây dựng CreateDeckPage');
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
         final theme = Theme.of(context);
@@ -76,69 +91,243 @@ class _CreateDeckPageState extends State<CreateDeckPage> {
           ),
           child: Scaffold(
             backgroundColor: theme.colorScheme.background,
-            appBar: AppBar(
-              backgroundColor: Colors.red,
-              title: Text(
-                AppLocalizations.of(context)!.createNewDeck,
-                style: TextStyle(color: Colors.white),
-              ),
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => context.go('/app/decks'),
-              ),
-            ),
             body: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.deckName,
-                        labelStyle: TextStyle(color: theme.colorScheme.onBackground.withOpacity(0.6)),
-                        border: const OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: theme.dividerColor),
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        width: double.infinity,
+                        color: Colors.red,
+                        child: Center(
+                          child: Text(
+                            AppLocalizations.of(context)!.lexiFlash ?? 'LexiFlash',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                      style: TextStyle(color: theme.colorScheme.onBackground),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _descriptionController,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.description,
-                        labelStyle: TextStyle(color: theme.colorScheme.onBackground.withOpacity(0.6)),
-                        border: const OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: theme.dividerColor),
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => context.pop(),
                         ),
                       ),
-                      style: TextStyle(color: theme.colorScheme.onBackground),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 20),
-                    _isLoading
-                        ? Center(child: CircularProgressIndicator(color: theme.colorScheme.secondary))
-                        : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.elevatedButtonTheme.style?.backgroundColor?.resolve({}) ?? theme.colorScheme.primary,
-                        foregroundColor: theme.elevatedButtonTheme.style?.foregroundColor?.resolve({}) ?? theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    ],
+                  ),
+                  Expanded(
+                    child: Container(
+                      color: theme.colorScheme.surface,
+                      padding: const EdgeInsets.all(16),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.grey.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [Colors.red.shade400, Colors.red.shade600],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.create_new_folder_rounded,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          AppLocalizations.of(context)!.createNewDeck,
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    AppLocalizations.of(context)!.deckName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: _nameController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Nhập tên bộ thẻ...',
+                                      hintStyle: TextStyle(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                      ),
+                                      filled: true,
+                                      fillColor: theme.colorScheme.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: theme.brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.2)
+                                              : Colors.grey.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: theme.brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.2)
+                                              : Colors.grey.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Colors.red,
+                                          width: 2.0,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    AppLocalizations.of(context)!.description,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller: _descriptionController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Nhập mô tả...',
+                                      hintStyle: TextStyle(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                      ),
+                                      filled: true,
+                                      fillColor: theme.colorScheme.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: theme.brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.2)
+                                              : Colors.grey.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: theme.brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.2)
+                                              : Colors.grey.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Colors.red,
+                                          width: 2.0,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontSize: 16,
+                                    ),
+                                    maxLines: 4,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _isLoading
+                                      ? Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.red,
+                                    ),
+                                  )
+                                      : SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      onPressed: _createDeck,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.check_circle_outline, size: 20),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            AppLocalizations.of(context)!.save,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      onPressed: _createDeck,
-                      child: Text(
-                        AppLocalizations.of(context)!.save,
-                        style: const TextStyle(fontSize: 16),
-                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

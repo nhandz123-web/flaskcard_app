@@ -19,8 +19,8 @@ class Deck {
 
   factory Deck.fromJson(Map<String, dynamic> json) {
     return Deck(
-      id: json['id'] as int? ?? 0, // Sử dụng 0 nếu id là null
-      userId: json['user_id'] as int? ?? 0, // Sử dụng 0 nếu user_id là null
+      id: json['id'] as int? ?? 0,
+      userId: json['user_id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       cardsCount: json['cards_count'] ?? 0,
@@ -36,5 +36,26 @@ class Deck {
     'description': description,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
+    'cards_count': cardsCount,
   };
+
+  Deck copyWith({
+    int? id,
+    int? userId,
+    String? name,
+    String? description,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? cardsCount,
+  }) {
+    return Deck(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      cardsCount: cardsCount ?? this.cardsCount,
+    );
+  }
 }

@@ -230,6 +230,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get removeAudio => 'removeAudio';
 
   @override
+  String get errorNavigating => 'errorNavigating';
+
+  @override
   String get noAudio => 'Không có audio';
 
   @override
@@ -313,6 +316,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get errorMarkingCard => 'Lỗi tạo thẻ';
 
   @override
+  String get notDeckOwner => 'notDeckOwner';
+
+  @override
+  String get retry => 'retry';
+
+  @override
   String get cardLearnedSuccessfully => 'Học thẻ thành công';
 
   @override
@@ -367,4 +376,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reviewEasy => 'Thẻ sẽ được ôn lại sau 1 ngày.';
+
+  @override
+  String get accountDetails => 'Cccount details';
+
+  @override
+  String get statistics => 'Statistics';
+
+  @override
+  String get help => 'Help';
 }
