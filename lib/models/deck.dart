@@ -5,7 +5,8 @@ class Deck {
   final String description;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final int cardsCount;
+  final int cardsCount; // Tổng số thẻ
+  final int reviewCardsCount; // Số thẻ cần ôn tập
 
   Deck({
     required this.id,
@@ -15,6 +16,7 @@ class Deck {
     required this.createdAt,
     required this.updatedAt,
     required this.cardsCount,
+    this.reviewCardsCount = 0, // Mặc định 0
   });
 
   factory Deck.fromJson(Map<String, dynamic> json) {
@@ -23,7 +25,8 @@ class Deck {
       userId: json['user_id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      cardsCount: json['cards_count'] ?? 0,
+      cardsCount: json['cards_count'] as int? ?? 0,
+      reviewCardsCount: json['review_cards_count'] as int? ?? 0, // Thêm trường
       createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
@@ -37,6 +40,7 @@ class Deck {
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     'cards_count': cardsCount,
+    'review_cards_count': reviewCardsCount, // Thêm trường
   };
 
   Deck copyWith({
@@ -47,6 +51,7 @@ class Deck {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? cardsCount,
+    int? reviewCardsCount,
   }) {
     return Deck(
       id: id ?? this.id,
@@ -56,6 +61,7 @@ class Deck {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       cardsCount: cardsCount ?? this.cardsCount,
+      reviewCardsCount: reviewCardsCount ?? this.reviewCardsCount, // Thêm trường
     );
   }
 }

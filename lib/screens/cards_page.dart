@@ -86,7 +86,7 @@ class _CardsPageState extends State<CardsPage> {
       return;
     }
 
-    final fullUrl = 'http://172.31.219.12:8080$audioUrl';
+    final fullUrl = 'http://10.211.73.12:8080$audioUrl';
     try {
       await _audioPlayer.stop();
       await _audioPlayer.play(UrlSource(fullUrl));
@@ -420,7 +420,7 @@ class _CardsPageState extends State<CardsPage> {
                                                     child: ClipRRect(
                                                       borderRadius: BorderRadius.circular(8),
                                                       child: Image.network(
-                                                        'http://172.31.219.12:8080${card.imageUrl}',
+                                                        'http://10.211.73.12:8080${card.imageUrl}',
                                                         width: 50,
                                                         height: 50,
                                                         fit: BoxFit.cover,

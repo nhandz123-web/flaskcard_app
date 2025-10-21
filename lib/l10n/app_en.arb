@@ -102,6 +102,7 @@
   "errorMarkingCard": "errorMarkingCard",
   "notDeckOwner": "notDeckOwner",
   "retry": "retry",
+  "ok" : "ok",
 
   "cardLearnedSuccessfully": "Card learned successfully",
   "errorMarkingCardLearned": "Error marking Card Learned",
@@ -168,5 +169,16 @@
 
   "accountDetails": "Cccount details",
   "statistics": "Statistics",
-  "help" : "Help"
+  "help" : "Help",
+
+  "reviewAgain10Minutes": "Thẻ sẽ được ôn lại sau 10 phút.",
+  "reviewAgain4Hours": "Thẻ sẽ được ôn lại sau 4 giờ.",
+  "reviewAgain12Hours": "Thẻ sẽ được ôn lại sau 12 giờ.",
+  "reviewAgain2Days": "Thẻ sẽ được ôn lại sau 2 ngày.",
+  "reviewAgain3Days": "Thẻ sẽ được ôn lại sau 3 ngày.",
+  "reviewAgain5Days": "Thẻ sẽ được ôn lại sau 5 ngày.",
+  "reviewAgainDays": "Thẻ sẽ được ôn lại sau %d ngày.",
+  "tapToRevealFirst": "Hãy lật thẻ để xem đáp án trước",
+  "completedToday": "Bạn đã hoàn thành hết thẻ hôm nay",
+  "newCardsAvailable": "New cards available"
 }

@@ -710,6 +710,12 @@ abstract class AppLocalizations {
   /// **'retry'**
   String get retry;
 
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'ok'**
+  String get ok;
+
   /// No description provided for @cardLearnedSuccessfully.
   ///
   /// In en, this message translates to:
@@ -835,6 +841,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help'**
   String get help;
+
+  /// No description provided for @reviewAgain10Minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 10 phút.'**
+  String get reviewAgain10Minutes;
+
+  /// No description provided for @reviewAgain4Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 4 giờ.'**
+  String get reviewAgain4Hours;
+
+  /// No description provided for @reviewAgain12Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 12 giờ.'**
+  String get reviewAgain12Hours;
+
+  /// No description provided for @reviewAgain2Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 2 ngày.'**
+  String get reviewAgain2Days;
+
+  /// No description provided for @reviewAgain3Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 3 ngày.'**
+  String get reviewAgain3Days;
+
+  /// No description provided for @reviewAgain5Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau 5 ngày.'**
+  String get reviewAgain5Days;
+
+  /// No description provided for @reviewAgainDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Thẻ sẽ được ôn lại sau %d ngày.'**
+  String get reviewAgainDays;
+
+  /// No description provided for @tapToRevealFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Hãy lật thẻ để xem đáp án trước'**
+  String get tapToRevealFirst;
+
+  /// No description provided for @completedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Bạn đã hoàn thành hết thẻ hôm nay'**
+  String get completedToday;
+
+  /// No description provided for @newCardsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'New cards available'**
+  String get newCardsAvailable;
 }
 
 class _AppLocalizationsDelegate

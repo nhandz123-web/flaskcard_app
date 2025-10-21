@@ -15,7 +15,7 @@ import 'package:flashcard_app/screens/learn_deck_page.dart';
 import 'package:flashcard_app/screens/account_details_page.dart';
 import 'package:flashcard_app/screens/statistics_page.dart';
 import 'package:flashcard_app/screens/help_page.dart';
-import 'package:flashcard_app/features/settings/settings_page.dart'; // Import SettingsPage
+import 'package:flashcard_app/features/settings/settings_page.dart';
 import 'package:flashcard_app/screens/shell/app_shell.dart';
 import 'package:flashcard_app/services/api_service.dart';
 import 'package:flashcard_app/services/token_store.dart';
@@ -64,14 +64,25 @@ GoRouter buildRouter(ApiService api, TokenStore tokenStore) {
       final needAuth = state.matchedLocation.startsWith('/app');
       final token = await tokenStore.getToken();
       print('Redirect check: location=${state.matchedLocation}, fullPath=${state.fullPath}, token=$token, needAuth=$needAuth');
+
+      // Nếu route hiện tại hợp lệ và người dùng đã đăng nhập, giữ nguyên route
+      if (needAuth && token != null && state.matchedLocation.startsWith('/app')) {
+        print('Valid route, staying at ${state.matchedLocation}');
+        return null;
+      }
+
+      // Chuyển hướng đến /login nếu cần xác thực mà không có token
       if (needAuth && token == null) {
         print('Redirecting to /login due to no token');
         return '/login';
       }
+
+      // Chuyển hướng đến /app/home nếu đã đăng nhập và cố truy cập /login hoặc /signup
       if ((state.matchedLocation == '/login' || state.matchedLocation == '/signup') && token != null) {
         print('Redirecting to /app/home due to logged in');
         return '/app/home';
       }
+
       return null;
     },
     errorBuilder: (context, state) => ErrorPage(message: 'Route not found: ${state.matchedLocation}'),

@@ -55,6 +55,7 @@ dependencies:
   audioplayers: ^5.2.0
   flip_card: ^0.7.0
   web_socket_channel: ^3.0.0  # Thêm package này
+  pull_to_refresh: ^2.0.0
 
   flutter_localizations:
     sdk: flutter
@@ -78,6 +79,8 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   generate: true
+  assets:
+    - assets/image/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

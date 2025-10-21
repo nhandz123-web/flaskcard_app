@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flashcard_app/services/api_service.dart';
 import 'package:flashcard_app/providers/user_provider.dart';
-import 'package:flashcard_app/models/deck.dart';
 import 'package:flashcard_app/core/settings/settings_provider.dart';
 import 'package:flashcard_app/l10n/app_localizations.dart';
 import 'package:flashcard_app/providers/deck_provider.dart';
+import 'package:flashcard_app/providers/review_provider.dart';
 
 class HomePage extends StatefulWidget {
   final ApiService api;
@@ -24,6 +24,11 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     print('Khởi tạo HomePage');
     widget.api.refreshDecks();
+    // Đồng bộ review counts khi khởi tạo
+    Provider.of<ReviewProvider>(context, listen: false).syncReviewCounts(
+      Provider.of<DeckProvider>(context, listen: false).decks.map((deck) => deck.id).toList(),
+      widget.api,
+    );
   }
 
   void _navigateToLearn(BuildContext context) {
@@ -46,9 +51,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     print('Xây dựng HomePage');
-    return Consumer3<UserProvider, SettingsProvider, DeckProvider>(
-      builder: (context, userProvider, settings, deckProvider, child) {
-        final totalCards = deckProvider.decks.fold(0, (sum, deck) => sum + deck.cardsCount);
+    return Consumer4<UserProvider, SettingsProvider, DeckProvider, ReviewProvider>(
+      builder: (context, userProvider, settings, deckProvider, reviewProvider, child) {
+        final totalDueCards = reviewProvider.reviewCounts.values.fold<int>(0, (sum, count) => sum + count);
 
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.background,
@@ -91,11 +96,9 @@ class _HomePageState extends State<HomePage> {
                               child: CircleAvatar(
                                 radius: 46,
                                 backgroundColor: Theme.of(context).colorScheme.surface,
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  size: 50,
-                                  color: Colors.red.shade400,
-                                ),
+                                backgroundImage: userProvider.avatarUrl != null
+                                    ? NetworkImage(userProvider.avatarUrl!)
+                                    : const AssetImage('assets/image/') as ImageProvider,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -118,7 +121,6 @@ class _HomePageState extends State<HomePage> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 30),
-
                             // Cards Statistics
                             Container(
                               padding: const EdgeInsets.all(20),
@@ -134,12 +136,12 @@ class _HomePageState extends State<HomePage> {
                               ),
                               child: Column(
                                 children: [
-                                  if (deckProvider.isLoading)
-                                    Padding(
-                                      padding: const EdgeInsets.all(20),
+                                  if (deckProvider.isLoading || reviewProvider.isLoading)
+                                    const Padding(
+                                      padding: EdgeInsets.all(20),
                                       child: CircularProgressIndicator(color: Colors.red),
                                     )
-                                  else if (deckProvider.error != null)
+                                  else if (deckProvider.error != null || reviewProvider.error != null)
                                     Column(
                                       children: [
                                         Icon(
@@ -158,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          deckProvider.error ?? '',
+                                          deckProvider.error ?? reviewProvider.error ?? '',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 14,
@@ -175,7 +177,16 @@ class _HomePageState extends State<HomePage> {
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                           ),
-                                          onPressed: () => widget.api.refreshDecks(),
+                                          onPressed: () {
+                                            widget.api.refreshDecks();
+                                            Provider.of<ReviewProvider>(context, listen: false).syncReviewCounts(
+                                              Provider.of<DeckProvider>(context, listen: false)
+                                                  .decks
+                                                  .map((deck) => deck.id)
+                                                  .toList(),
+                                              widget.api,
+                                            );
+                                          },
                                           child: Text(AppLocalizations.of(context)!.retry ?? 'Thử lại'),
                                         ),
                                       ],
@@ -232,7 +243,7 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                      '$totalCards ${AppLocalizations.of(context)!.cards ?? 'thẻ'}',
+                                                      '$totalDueCards ${AppLocalizations.of(context)!.cards ?? 'thẻ'}',
                                                       style: TextStyle(
                                                         fontSize: 24,
                                                         fontWeight: FontWeight.bold,
@@ -275,9 +286,7 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                             ),
-
                             const SizedBox(height: 20),
-
                             // Learn Now Button
                             SizedBox(
                               width: double.infinity,
@@ -292,7 +301,7 @@ class _HomePageState extends State<HomePage> {
                                   elevation: 0,
                                   disabledBackgroundColor: Colors.red.withOpacity(0.6),
                                 ),
-                                onPressed: deckProvider.isLoading || deckProvider.decks.isEmpty
+                                onPressed: (deckProvider.isLoading || reviewProvider.isLoading || totalDueCards == 0)
                                     ? null
                                     : () => _navigateToLearn(context),
                                 child: Row(
@@ -311,9 +320,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 20),
-
                             // Streak
                             Container(
                               padding: const EdgeInsets.all(20),

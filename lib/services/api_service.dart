@@ -8,11 +8,13 @@ import 'package:flashcard_app/services/token_store.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flashcard_app/providers/deck_provider.dart';
+import 'package:flashcard_app/providers/review_provider.dart';
 
 class ApiService {
   final TokenStore _tokenStore;
   final Dio _dio;
   final DeckProvider deckProvider;
+  final ReviewProvider reviewProvider;
   WebSocketChannel? _webSocketChannel;
   Map<String, dynamic>? _cachedUserData;
   DateTime? _lastUserFetch;
@@ -21,9 +23,9 @@ class ApiService {
   String? _decksEtag;
   DateTime? _lastDecksFetch;
 
-  ApiService(this._tokenStore, this.deckProvider)
+  ApiService(this._tokenStore, this.deckProvider, this.reviewProvider)
       : _dio = Dio(BaseOptions(
-    baseUrl: 'http://172.31.219.12:8080/api',
+    baseUrl: 'http://10.211.73.12:8080/api',
     connectTimeout: Duration(seconds: 10),
     receiveTimeout: Duration(seconds: 10),
   )) {
@@ -45,7 +47,7 @@ class ApiService {
         handler.next(response);
       },
       onError: (e, handler) async {
-        print('Lỗi: ${e.message}, Phản hồi: ${e.response?.data}');
+        print('Lỗi: ${e.message}, Phản hồi: ${e.response?.data}, URL: ${e.requestOptions.uri}');
         if (e.response?.statusCode == 401) {
           print('Lỗi 401, thử làm mới token');
           try {
@@ -55,7 +57,9 @@ class ApiService {
             return handler.resolve(await _dio.fetch(e.requestOptions));
           } catch (refreshError) {
             print('Làm mới token thất bại: $refreshError');
-            await _tokenStore.clear();
+            // Tạm thời không gọi _tokenStore.clear() để debug
+            // await _tokenStore.clear();
+            print('Bỏ qua clear token để tránh redirect không mong muốn');
             handler.next(e);
           }
         } else if (e.response?.statusCode == 429) {
@@ -88,7 +92,7 @@ class ApiService {
     try {
       final token = await _tokenStore.getToken();
       _webSocketChannel = WebSocketChannel.connect(
-        Uri.parse('ws://172.31.219.12:6001/app/myappkey?protocol=7&client=js&version=7.0.3&flash=false'),
+        Uri.parse('ws://10.211.73.12:6001/app/myappkey?protocol=7&client=js&version=7.0.3&flash=false'),
       );
 
       _webSocketChannel!.stream.listen(
@@ -111,19 +115,16 @@ class ApiService {
               _removeCachedDeck(deckId);
               _saveDecksToStorage(deckProvider.decks);
               print('WebSocket: Deck deleted, phát: ${deckProvider.decks.length} decks');
-            } else if (event == 'card.created') {
+            } else if (event == 'card.created' || event == 'card.deleted') {
               final deckId = eventData['deck_id'];
-              deckProvider.updateCardsCount(deckId, 1);
+              deckProvider.syncCardsCount(deckId, this);
+              _syncReviewCount(deckId);
               _saveDecksToStorage(deckProvider.decks);
-              print('WebSocket: Card created for deck ID $deckId');
-            } else if (event == 'card.updated') {
+              print('WebSocket: Card event for deck ID $deckId, synced total and review counts');
+            } else if (event == 'card.updated' || event == 'card.reviewed') {
               final deckId = eventData['deck_id'];
-              print('WebSocket: Card updated for deck ID $deckId');
-            } else if (event == 'card.deleted') {
-              final deckId = eventData['deck_id'];
-              deckProvider.updateCardsCount(deckId, -1);
-              _saveDecksToStorage(deckProvider.decks);
-              print('WebSocket: Card deleted for deck ID $deckId');
+              _syncReviewCount(deckId);
+              print('WebSocket: Card updated/reviewed for deck ID $deckId, synced review count');
             }
           } catch (e) {
             print('Lỗi xử lý dữ liệu WebSocket: $e');
@@ -144,6 +145,18 @@ class ApiService {
       print('Lỗi khởi tạo WebSocket: $e');
       deckProvider.setError('Khởi tạo WebSocket thất bại: $e');
       _reconnectWebSocket();
+    }
+  }
+
+  Future<void> _syncReviewCount(int deckId) async {
+    final startTime = DateTime.now();
+    try {
+      final cards = await getCardsToReview(deckId);
+      reviewProvider.setReviewCount(deckId, cards.length);
+      print('Synced review count for deck $deckId to ${cards.length} in ${DateTime.now().difference(startTime).inMilliseconds}ms');
+    } catch (e) {
+      print('Lỗi đồng bộ review count cho deck $deckId: $e');
+      reviewProvider.setError('Lỗi đồng bộ review count: $e');
     }
   }
 
@@ -215,6 +228,9 @@ class ApiService {
       _lastDecksFetch = DateTime.now();
       await _saveDecksToStorage(decks);
       deckProvider.setDecks(decks);
+      for (var deck in decks) {
+        await _syncReviewCount(deck.id);
+      }
       print('Lấy decks thành công: ${decks.length} decks');
       return decks;
     } catch (e) {
@@ -232,6 +248,8 @@ class ApiService {
         return storedDecks;
       }
       throw Exception('Tải decks thất bại: $e');
+    } finally {
+      deckProvider.setLoading(false);
     }
   }
 
@@ -381,16 +399,6 @@ class ApiService {
     }
   }
 
-  Future<void> updateProfile(Map<String, dynamic> data) async {
-    try {
-      await _dio.put('/me', data: data);
-      _cachedUserData = null;
-    } catch (e) {
-      print('Lỗi cập nhật hồ sơ: $e');
-      throw Exception('Cập nhật hồ sơ thất bại: $e');
-    }
-  }
-
   Future<deck_model.Deck> getDeck(int deckId) async {
     try {
       final response = await _dio.get('/decks/$deckId');
@@ -459,7 +467,6 @@ class ApiService {
     try {
       await _dio.delete('/decks/$deckId');
     } on DioException catch (e) {
-      // Nếu server báo 404 (deck không tồn tại) -> vẫn coi như đã xóa xong
       if (e.response?.statusCode == 404) {
         print('⚠️ Deck $deckId không tồn tại (coi như đã bị xóa).');
       } else if (e.response?.statusCode == 403) {
@@ -471,15 +478,11 @@ class ApiService {
       print('❌ Lỗi không xác định: $e');
       deckProvider.setError('Đã xảy ra lỗi khi xóa deck.');
     } finally {
-      // Dù server trả gì đi nữa, vẫn cập nhật lại local
       deckProvider.removeDeck(deckId);
       await _saveDecksToStorage(deckProvider.decks);
       deckProvider.setLoading(false);
     }
   }
-
-
-
 
   Future<card_model.Card> createCard(
       int deckId, String front, String back, String? phonetic, String? example, String? imageUrl, String? audioUrl, Map<String, dynamic>? extra) async {
@@ -498,13 +501,10 @@ class ApiService {
         },
       );
       final newCard = card_model.Card.fromJson(response.data['card']);
-      if (_webSocketChannel == null || _webSocketChannel!.closeCode != null) {
-        await refreshDecks();
-      } else {
-        deckProvider.updateCardsCount(deckId, 1);
-      }
+      await refreshDecks();
+      await _syncReviewCount(deckId);
       await _saveDecksToStorage(deckProvider.decks);
-      print('Tạo card thành công, cập nhật cardsCount');
+      print('Tạo card thành công, synced total and review counts');
       return newCard;
     } catch (e) {
       print('Lỗi tạo card: $e');
@@ -535,13 +535,10 @@ class ApiService {
     deckProvider.setLoading(true);
     try {
       await _dio.delete('/decks/$deckId/cards/$cardId');
-      if (_webSocketChannel == null || _webSocketChannel!.closeCode != null) {
-        await refreshDecks();
-      } else {
-        deckProvider.updateCardsCount(deckId, -1);
-      }
+      await refreshDecks();
+      await _syncReviewCount(deckId);
       await _saveDecksToStorage(deckProvider.decks);
-      print('Xóa card thành công, cập nhật cardsCount');
+      print('Xóa card thành công, synced total and review counts');
     } catch (e) {
       print('Lỗi xóa card: $e');
       deckProvider.setError('Xóa card thất bại: $e');
@@ -580,6 +577,7 @@ class ApiService {
   Future<List<card_model.Card>> getCardsToReview(int deckId) async {
     try {
       final response = await _dio.get('/decks/$deckId/learn');
+      print('API /decks/$deckId/learn response: ${response.data}');
       return (response.data['cards'] as List).map((e) => card_model.Card.fromJson(e)).toList();
     } catch (e) {
       print('Lỗi lấy cards để ôn tập: $e');
@@ -593,6 +591,7 @@ class ApiService {
         '/decks/$deckId/cards/$cardId/progress',
         data: {'quality': quality},
       );
+      await _syncReviewCount(deckId);
     } catch (e) {
       print('Lỗi cập nhật tiến độ card: $e');
       throw Exception('Cập nhật tiến độ card thất bại: $e');
@@ -609,7 +608,7 @@ class ApiService {
   }
 
   Future<void> markCardReview(
-      int cardId, int quality, double easiness, int repetition, int interval, DateTime nextReviewDate) async {
+      int cardId, int deckId, int quality, double easiness, int repetition, int interval, DateTime nextReviewDate) async {
     try {
       await _dio.post(
         '/cards/$cardId/review',
@@ -621,9 +620,39 @@ class ApiService {
           'next_review_date': nextReviewDate.toIso8601String(),
         },
       );
+      await _syncReviewCount(deckId);
+      print('Synced review count for deck $deckId after review');
     } catch (e) {
       print('Lỗi đánh dấu ôn tập card: $e');
       throw Exception('Đánh dấu ôn tập card thất bại: $e');
+    }
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    try {
+      print('URL yêu cầu: ${_dio.options.baseUrl}/update-profile');
+      print('Dữ liệu yêu cầu: $data');
+      final response = await _dio.post('/update-profile', data: data);
+      _cachedUserData = null;
+      _lastUserFetch = null;
+      return response.data;
+    } catch (e) {
+      print('Lỗi cập nhật hồ sơ: $e');
+      throw Exception('Lỗi cập nhật hồ sơ: $e');
+    }
+  }
+
+  Future<String> updateAvatar(File image) async {
+    try {
+      FormData formData = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(image.path, filename: 'avatar.jpg'),
+      });
+      final response = await _dio.post('/update-avatar', data: formData);
+      _cachedUserData = null;
+      _lastUserFetch = null;
+      return response.data['avatar_url'];
+    } catch (e) {
+      throw Exception('Lỗi upload ảnh: $e');
     }
   }
 }

@@ -324,6 +324,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'retry';
 
   @override
+  String get ok => 'ok';
+
+  @override
   String get cardLearnedSuccessfully => 'Card learned successfully';
 
   @override
@@ -388,4 +391,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get help => 'Help';
+
+  @override
+  String get reviewAgain10Minutes => 'Thẻ sẽ được ôn lại sau 10 phút.';
+
+  @override
+  String get reviewAgain4Hours => 'Thẻ sẽ được ôn lại sau 4 giờ.';
+
+  @override
+  String get reviewAgain12Hours => 'Thẻ sẽ được ôn lại sau 12 giờ.';
+
+  @override
+  String get reviewAgain2Days => 'Thẻ sẽ được ôn lại sau 2 ngày.';
+
+  @override
+  String get reviewAgain3Days => 'Thẻ sẽ được ôn lại sau 3 ngày.';
+
+  @override
+  String get reviewAgain5Days => 'Thẻ sẽ được ôn lại sau 5 ngày.';
+
+  @override
+  String get reviewAgainDays => 'Thẻ sẽ được ôn lại sau %d ngày.';
+
+  @override
+  String get tapToRevealFirst => 'Hãy lật thẻ để xem đáp án trước';
+
+  @override
+  String get completedToday => 'Bạn đã hoàn thành hết thẻ hôm nay';
+
+  @override
+  String get newCardsAvailable => 'New cards available';
 }

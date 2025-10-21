@@ -10,6 +10,8 @@ import '../models/card.dart' as card_model;
 import '../models/deck.dart' as deck_model;
 import '../l10n/app_localizations.dart';
 import '../core/settings/settings_provider.dart';
+import '../providers/deck_provider.dart';
+import '../providers/review_provider.dart';
 
 class LearnDeckPage extends StatefulWidget {
   final ApiService api;
@@ -32,22 +34,30 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   bool isLoading = true;
   bool isAudioPlaying = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  static const String _baseUrl = 'http://172.31.219.12:8080';
+  static const String _baseUrl = 'http://10.211.73.12:8080';
   late Future<deck_model.Deck> _deckFuture;
   Timer? _refreshTimer;
   final Map<int, DateTime> _reviewAgainCards = {};
+  GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
+  late DeckProvider _deckProvider;
+  late ReviewProvider _reviewProvider;
+  StreamSubscription<PlayerState>? _audioPlayerSubscription; // Khai báo biến
 
   @override
   void initState() {
     super.initState();
+    _deckProvider = Provider.of<DeckProvider>(context, listen: false);
+    _reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
     _loadCards();
     _deckFuture = widget.api.getDeck(widget.deckId);
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      setState(() {
-        isAudioPlaying = state == PlayerState.playing;
-      });
+    _audioPlayerSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() {
+          isAudioPlaying = state == PlayerState.playing;
+        });
+      }
     });
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       _loadCards();
     });
   }
@@ -55,6 +65,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _audioPlayerSubscription?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -62,68 +73,104 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   Future<void> _loadCards() async {
     try {
       final data = await widget.api.getCardsToReview(widget.deckId);
-      setState(() {
-        final currentCardId = reviewCards.isNotEmpty && currentIndex < reviewCards.length
-            ? reviewCards[currentIndex].id
-            : null;
-        final now = DateTime.now();
-        final newCards = data.where((card) {
-          if (card.id == currentCardId) return false;
-          if (_reviewAgainCards.containsKey(card.id)) {
-            return now.isAfter(_reviewAgainCards[card.id]!) && !reviewCards.any((c) => c.id == card.id);
-          }
-          return !reviewCards.any((c) => c.id == card.id);
-        }).toList();
-        reviewCards.addAll(newCards);
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          final currentCardId = reviewCards.isNotEmpty && currentIndex < reviewCards.length
+              ? reviewCards[currentIndex].id
+              : null;
+          final now = DateTime.now();
+          final newCards = data.where((card) {
+            if (card.id == currentCardId) return false;
+            if (_reviewAgainCards.containsKey(card.id)) {
+              return now.isAfter(_reviewAgainCards[card.id]!) && !reviewCards.any((c) => c.id == card.id);
+            }
+            return !reviewCards.any((c) => c.id == card.id);
+          }).toList();
+          reviewCards.addAll(newCards);
+          isLoading = false;
+        });
+        _reviewProvider.setReviewCount(widget.deckId, data.length);
+        print('Loaded ${data.length} cards for review, updated review count for deck ${widget.deckId}');
+      }
     } catch (e) {
       print('Lỗi khi load cards: $e');
-      setState(() => isLoading = false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingCards ?? 'Lỗi khi tải thẻ'}: $e')),
-      );
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorLoadingCards ?? 'Lỗi khi tải thẻ'}: $e')),
+        );
+      }
     }
   }
 
   void _calculateSM2(card_model.Card card, int quality) async {
-    double easiness = card.easiness;
-    int repetition = card.repetition;
-    int interval = card.interval;
+    double easiness = card.easiness ?? 2.5;
+    int repetition = card.repetition ?? 0;
+    int interval = card.interval ?? 1;
     DateTime nextReviewDate;
 
-    easiness += (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    easiness = easiness < 1.3 ? 1.3 : easiness;
+    easiness = easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    if (easiness < 1.3) easiness = 1.3;
+    if (easiness > 2.5) easiness = 2.5;
 
     switch (quality) {
       case 0:
         repetition = 0;
         interval = 1;
-        nextReviewDate = DateTime.now().add(const Duration(minutes: 1));
+        nextReviewDate = DateTime.now().add(const Duration(minutes: 10));
         break;
       case 2:
-        repetition = repetition > 0 ? repetition : 0;
-        interval = (interval * 0.5).round().clamp(1, interval);
-        nextReviewDate = DateTime.now().add(const Duration(minutes: 5));
+        if (repetition == 0) {
+          interval = 1;
+          nextReviewDate = DateTime.now().add(const Duration(hours: 4));
+        } else {
+          repetition = (repetition - 1).clamp(0, repetition);
+          interval = (interval * 0.7).round().clamp(1, double.infinity.toInt());
+          if (interval == 1) {
+            nextReviewDate = DateTime.now().add(const Duration(hours: 4));
+          } else if (interval <= 3) {
+            nextReviewDate = DateTime.now().add(Duration(days: interval));
+          } else {
+            nextReviewDate = DateTime.now().add(Duration(days: interval));
+          }
+        }
         break;
       case 3:
         repetition += 1;
-        interval = (interval * 1.2).round().clamp(1, double.infinity.toInt());
-        nextReviewDate = DateTime.now().add(const Duration(minutes: 10));
+        if (repetition == 1) {
+          interval = 1;
+          nextReviewDate = DateTime.now().add(const Duration(hours: 12));
+        } else if (repetition == 2) {
+          interval = 3;
+          nextReviewDate = DateTime.now().add(const Duration(days: 3));
+        } else {
+          interval = (interval * easiness).round();
+          nextReviewDate = DateTime.now().add(Duration(days: interval));
+        }
         break;
       case 5:
         repetition += 1;
-        interval = (interval * 2.0).round().clamp(1, double.infinity.toInt());
-        nextReviewDate = DateTime.now().add(const Duration(days: 1));
+        if (repetition == 1) {
+          interval = 2;
+          nextReviewDate = DateTime.now().add(const Duration(days: 2));
+        } else if (repetition == 2) {
+          interval = 5;
+          nextReviewDate = DateTime.now().add(const Duration(days: 5));
+        } else {
+          interval = (interval * easiness * 1.3).round();
+          interval = interval.clamp(1, 180);
+          nextReviewDate = DateTime.now().add(Duration(days: interval));
+        }
         break;
       default:
         return;
     }
 
     try {
+      print('Marking review for card ${card.id} with quality $quality');
       await widget.api.markCardReview(
         card.id,
+        widget.deckId,
         quality,
         easiness,
         repetition,
@@ -135,6 +182,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         card.repetition = repetition;
         card.interval = interval;
         card.nextReviewDate = nextReviewDate;
+
         if (quality == 0) {
           _reviewAgainCards[card.id] = nextReviewDate;
         } else {
@@ -142,7 +190,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         }
       });
     } catch (e) {
-      print('Lỗi khi cập nhật review: $e');
+      print('Lỗi khi cập nhật review card ${card.id}: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorMarkingCardLearned ?? 'Lỗi khi cập nhật thẻ')),
@@ -157,6 +205,10 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
 
     setState(() {
       showBack = false;
+      if (cardKey.currentState?.isFront == false) {
+        cardKey.currentState?.toggleCard();
+      }
+
       if (quality == 0 || quality == 2) {
         if (reviewCards.length > 1) {
           final reviewedCard = reviewCards.removeAt(currentIndex);
@@ -164,24 +216,32 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           if (currentIndex >= reviewCards.length) {
             currentIndex = 0;
           }
+          String message = '';
+          if (quality == 0) {
+            message = 'Thẻ sẽ được ôn lại sau 10 phút.';
+          } else {
+            message = card.repetition == 0
+                ? 'Thẻ sẽ được ôn lại sau 4 giờ.'
+                : 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                quality == 0
-                    ? (AppLocalizations.of(context)!.reviewAgain ?? 'Thẻ sẽ được ôn lại sau 1 phút.')
-                    : (AppLocalizations.of(context)!.reviewHard ?? 'Thẻ sẽ được ôn lại sau 5 phút.'),
-              ),
+              content: Text(message),
               duration: const Duration(seconds: 2),
             ),
           );
         } else {
+          String message = '';
+          if (quality == 0) {
+            message = 'Thẻ sẽ được ôn lại sau 10 phút.';
+          } else {
+            message = card.repetition == 0
+                ? 'Thẻ sẽ được ôn lại sau 4 giờ.'
+                : 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                quality == 0
-                    ? (AppLocalizations.of(context)!.reviewAgain ?? 'Thẻ sẽ được ôn lại sau 1 phút.')
-                    : (AppLocalizations.of(context)!.reviewHard ?? 'Thẻ sẽ được ôn lại sau 5 phút.'),
-              ),
+              content: Text(message),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -191,13 +251,27 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
         if (currentIndex >= reviewCards.length) {
           currentIndex = 0;
         }
+        String message = '';
+        if (quality == 3) {
+          if (card.repetition == 1) {
+            message = 'Thẻ sẽ được ôn lại sau 12 giờ.';
+          } else if (card.repetition == 2) {
+            message = 'Thẻ sẽ được ôn lại sau 3 ngày.';
+          } else {
+            message = 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
+          }
+        } else { // quality == 5
+          if (card.repetition == 1) {
+            message = 'Thẻ sẽ được ôn lại sau 2 ngày.';
+          } else if (card.repetition == 2) {
+            message = 'Thẻ sẽ được ôn lại sau 5 ngày.';
+          } else {
+            message = 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              quality == 3
-                  ? (AppLocalizations.of(context)!.reviewNormal ?? 'Thẻ sẽ được ôn lại sau 10 phút.')
-                  : (AppLocalizations.of(context)!.reviewEasy ?? 'Thẻ sẽ được ôn lại sau 1 ngày.'),
-            ),
+            content: Text(message),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -209,6 +283,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   void _nextCard() {
     setState(() {
       showBack = false;
+      cardKey = GlobalKey<FlipCardState>();
+
       if (currentIndex < reviewCards.length - 1) {
         currentIndex++;
       } else if (reviewCards.isEmpty) {
@@ -395,6 +471,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                             children: [
                               const SizedBox(height: 30),
                               FlipCard(
+                                key: cardKey,
                                 direction: FlipDirection.HORIZONTAL,
                                 front: _buildCardSide(
                                   context,
@@ -447,7 +524,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                        if (reviewCards[currentIndex].phonetic != null && reviewCards[currentIndex].phonetic!.isNotEmpty)
+                                        if (reviewCards[currentIndex].phonetic != null &&
+                                            reviewCards[currentIndex].phonetic!.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.only(top: 12),
                                             child: Text(
@@ -461,7 +539,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                                             ),
                                           ),
                                         const SizedBox(height: 16),
-                                        if (reviewCards[currentIndex].imageUrl != null && reviewCards[currentIndex].imageUrl!.isNotEmpty)
+                                        if (reviewCards[currentIndex].imageUrl != null &&
+                                            reviewCards[currentIndex].imageUrl!.isNotEmpty)
                                           GestureDetector(
                                             onTap: () => _showImageDialog(reviewCards[currentIndex].imageUrl!),
                                             child: ClipRRect(
@@ -482,7 +561,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                                               ),
                                             ),
                                           ),
-                                        if (reviewCards[currentIndex].audioUrl != null && reviewCards[currentIndex].audioUrl!.isNotEmpty)
+                                        if (reviewCards[currentIndex].audioUrl != null &&
+                                            reviewCards[currentIndex].audioUrl!.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.only(top: 12),
                                             child: IconButton(
@@ -494,7 +574,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                                               onPressed: () => _playAudio(reviewCards[currentIndex].audioUrl),
                                             ),
                                           ),
-                                        if (reviewCards[currentIndex].example != null && reviewCards[currentIndex].example!.isNotEmpty)
+                                        if (reviewCards[currentIndex].example != null &&
+                                            reviewCards[currentIndex].example!.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.only(top: 16),
                                             child: Container(
@@ -531,7 +612,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                     Container(
                       color: Theme.of(context).colorScheme.surface,
                       padding: const EdgeInsets.all(16),
-                      child: Row(
+                      child: showBack
+                          ? Row(
                         children: [
                           Expanded(
                             child: ElevatedButton(
@@ -629,6 +711,28 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                             ),
                           ),
                         ],
+                      )
+                          : Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.touch_app_rounded,
+                              color: Colors.grey.shade600,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Hãy lật thẻ để xem đáp án trước',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                 ],
