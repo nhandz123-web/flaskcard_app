@@ -27,6 +27,7 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error loading user: $e');
+      clearUser(); // Gọi clearUser nếu loadUser thất bại
       _userId = null;
       _name = null;
       _email = null;
@@ -34,6 +35,15 @@ class UserProvider with ChangeNotifier {
       notifyListeners();
       throw Exception('Failed to load user: $e');
     }
+  }
+
+  void clearUser() {
+    _userId = null;
+    _name = null;
+    _email = null;
+    _avatarUrl = null;
+    print('User state cleared');
+    notifyListeners();
   }
 
   Future<void> updateProfile(String name, String email) async {

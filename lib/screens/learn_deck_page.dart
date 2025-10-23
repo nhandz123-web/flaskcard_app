@@ -12,6 +12,8 @@ import '../l10n/app_localizations.dart';
 import '../core/settings/settings_provider.dart';
 import '../providers/deck_provider.dart';
 import '../providers/review_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/ai_insights_widget.dart';
 
 class LearnDeckPage extends StatefulWidget {
   final ApiService api;
@@ -41,7 +43,10 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   late DeckProvider _deckProvider;
   late ReviewProvider _reviewProvider;
-  StreamSubscription<PlayerState>? _audioPlayerSubscription; // Khai báo biến
+  StreamSubscription<PlayerState>? _audioPlayerSubscription;
+  Map<String, dynamic>? _currentCardAIPrediction;
+  bool _isLoadingAI = false;
+  bool _useAI = true;
 
   @override
   void initState() {
@@ -50,6 +55,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     _reviewProvider = Provider.of<ReviewProvider>(context, listen: false);
     _loadCards();
     _deckFuture = widget.api.getDeck(widget.deckId);
+
     _audioPlayerSubscription = _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {
@@ -60,6 +66,7 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       _loadCards();
     });
+    _loadAIPreferences();
   }
 
   @override
@@ -68,6 +75,39 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     _audioPlayerSubscription?.cancel();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAIPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _useAI = prefs.getBool('use_ai_predictions') ?? true;
+    });
+  }
+
+  Future<void> _loadAIPrediction() async {
+    if (!_useAI || currentIndex >= reviewCards.length) return;
+
+    setState(() => _isLoadingAI = true);
+
+    try {
+      final card = reviewCards[currentIndex];
+      final response = await widget.api.getCardAIPrediction(card.id);
+
+      if (mounted) {
+        setState(() {
+          _currentCardAIPrediction = response['prediction'];
+          _isLoadingAI = false;
+        });
+      }
+    } catch (e) {
+      print('Lỗi khi load AI prediction: $e');
+      if (mounted) {
+        setState(() {
+          _currentCardAIPrediction = null;
+          _isLoadingAI = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadCards() async {
@@ -82,7 +122,8 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           final newCards = data.where((card) {
             if (card.id == currentCardId) return false;
             if (_reviewAgainCards.containsKey(card.id)) {
-              return now.isAfter(_reviewAgainCards[card.id]!) && !reviewCards.any((c) => c.id == card.id);
+              return now.isAfter(_reviewAgainCards[card.id]!) &&
+                  !reviewCards.any((c) => c.id == card.id);
             }
             return !reviewCards.any((c) => c.id == card.id);
           }).toList();
@@ -90,7 +131,10 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           isLoading = false;
         });
         _reviewProvider.setReviewCount(widget.deckId, data.length);
-        print('Loaded ${data.length} cards for review, updated review count for deck ${widget.deckId}');
+
+        if (reviewCards.isNotEmpty) {
+          _loadAIPrediction();
+        }
       }
     } catch (e) {
       print('Lỗi khi load cards: $e');
@@ -117,17 +161,17 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
       case 0:
         repetition = 0;
         interval = 1;
-        nextReviewDate = DateTime.now().add(const Duration(minutes: 10));
+        nextReviewDate = DateTime.now().add(const Duration(minutes: 1));
         break;
       case 2:
         if (repetition == 0) {
           interval = 1;
-          nextReviewDate = DateTime.now().add(const Duration(hours: 4));
+          nextReviewDate = DateTime.now().add(const Duration(minutes: 5));
         } else {
           repetition = (repetition - 1).clamp(0, repetition);
           interval = (interval * 0.7).round().clamp(1, double.infinity.toInt());
           if (interval == 1) {
-            nextReviewDate = DateTime.now().add(const Duration(hours: 4));
+            nextReviewDate = DateTime.now().add(const Duration(minutes: 5));
           } else if (interval <= 3) {
             nextReviewDate = DateTime.now().add(Duration(days: interval));
           } else {
@@ -198,10 +242,15 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
     }
   }
 
-  void _reviewCard(int quality) {
+  void _reviewCard(int quality) async {
     if (currentIndex >= reviewCards.length) return;
     final card = reviewCards[currentIndex];
-    _calculateSM2(card, quality);
+
+    if (_useAI) {
+      await _reviewCardWithAI(card, quality);
+    } else {
+      _calculateSM2(card, quality);
+    }
 
     setState(() {
       showBack = false;
@@ -216,74 +265,111 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
           if (currentIndex >= reviewCards.length) {
             currentIndex = 0;
           }
-          String message = '';
-          if (quality == 0) {
-            message = 'Thẻ sẽ được ôn lại sau 10 phút.';
-          } else {
-            message = card.repetition == 0
-                ? 'Thẻ sẽ được ôn lại sau 4 giờ.'
-                : 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        } else {
-          String message = '';
-          if (quality == 0) {
-            message = 'Thẻ sẽ được ôn lại sau 10 phút.';
-          } else {
-            message = card.repetition == 0
-                ? 'Thẻ sẽ được ôn lại sau 4 giờ.'
-                : 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              duration: const Duration(seconds: 2),
-            ),
-          );
         }
       } else {
         reviewCards.removeAt(currentIndex);
         if (currentIndex >= reviewCards.length) {
           currentIndex = 0;
         }
-        String message = '';
-        if (quality == 3) {
-          if (card.repetition == 1) {
-            message = 'Thẻ sẽ được ôn lại sau 12 giờ.';
-          } else if (card.repetition == 2) {
-            message = 'Thẻ sẽ được ôn lại sau 3 ngày.';
-          } else {
-            message = 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
-          }
-        } else { // quality == 5
-          if (card.repetition == 1) {
-            message = 'Thẻ sẽ được ôn lại sau 2 ngày.';
-          } else if (card.repetition == 2) {
-            message = 'Thẻ sẽ được ôn lại sau 5 ngày.';
-          } else {
-            message = 'Thẻ sẽ được ôn lại sau ${card.interval} ngày.';
-          }
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
       _nextCard();
     });
+  }
+
+  Future<void> _reviewCardWithAI(card_model.Card card, int quality) async {
+    try {
+      final response = await widget.api.markCardReviewWithAI(card.id, quality);
+
+      final updatedCard = response['card'];
+      final aiInsights = response['ai_insights'];
+
+      card.easiness = updatedCard['easiness'].toDouble();
+      card.repetition = updatedCard['repetition'];
+      card.interval = updatedCard['interval'];
+      card.nextReviewDate = DateTime.parse(updatedCard['next_review_date']);
+
+      if (quality == 0) {
+        _reviewAgainCards[card.id] = card.nextReviewDate!;
+      } else {
+        _reviewAgainCards.remove(card.id);
+      }
+
+      if (mounted && aiInsights != null) {
+        _showAIInsightsSnackbar(aiInsights, card.interval);
+      }
+    } catch (e) {
+      print('Lỗi khi review với AI: $e');
+      _calculateSM2(card, quality);
+    }
+  }
+
+  void _showAIInsightsSnackbar(Map<String, dynamic> insights, int interval) {
+    final forgettingProb = insights['forgetting_probability'] ?? 0;
+    final difficulty = insights['difficulty'] ?? 'Medium';
+    final reasoning = insights['reasoning'] ?? '';
+
+    IconData icon;
+    Color color;
+
+    if (forgettingProb >= 70) {
+      icon = Icons.warning_rounded;
+      color = Colors.red;
+    } else if (forgettingProb >= 40) {
+      icon = Icons.info_rounded;
+      color = Colors.orange;
+    } else {
+      icon = Icons.check_circle_rounded;
+      color = Colors.green;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'AI Insights',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 14),
+                const SizedBox(width: 6),
+                Text('Khả năng quên: $forgettingProb% ($difficulty)'),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('Ôn lại sau $interval ngày'),
+            if (reasoning.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                reasoning,
+                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ],
+        ),
+        backgroundColor: color,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   void _nextCard() {
     setState(() {
       showBack = false;
       cardKey = GlobalKey<FlipCardState>();
+      _currentCardAIPrediction = null;
 
       if (currentIndex < reviewCards.length - 1) {
         currentIndex++;
@@ -302,7 +388,40 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
       } else {
         currentIndex = 0;
       }
+
+      if (reviewCards.isNotEmpty && currentIndex < reviewCards.length) {
+        _loadAIPrediction();
+      }
     });
+  }
+
+  void _toggleAI() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _useAI = !_useAI;
+    });
+    await prefs.setBool('use_ai_predictions', _useAI);
+
+    if (_useAI && reviewCards.isNotEmpty && currentIndex < reviewCards.length) {
+      _loadAIPrediction();
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              _useAI ? Icons.auto_awesome : Icons.calculate,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(_useAI ? 'AI Insights đã bật' : 'Đã chuyển về SM-2 cổ điển'),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _playAudio(String? audioUrl) async {
@@ -426,6 +545,19 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                           onPressed: () => context.go('/app/learn'),
                         ),
                       ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          icon: Icon(
+                            _useAI ? Icons.auto_awesome : Icons.calculate,
+                            color: Colors.white,
+                          ),
+                          onPressed: _toggleAI,
+                          tooltip: _useAI ? 'AI đang bật' : 'AI đang tắt',
+                        ),
+                      ),
                     ],
                   ),
                   Expanded(
@@ -465,12 +597,17 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                         ),
                       )
                           : SingleChildScrollView(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(height: 30),
-                              FlipCard(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            if (_useAI)
+                              AIInsightsWidget(
+                                prediction: _currentCardAIPrediction,
+                                isLoading: _isLoadingAI,
+                              ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: FlipCard(
                                 key: cardKey,
                                 direction: FlipDirection.HORIZONTAL,
                                 front: _buildCardSide(
@@ -601,9 +738,9 @@ class _LearnDeckPageState extends State<LearnDeckPage> {
                                 ),
                                 onFlip: () => setState(() => showBack = !showBack),
                               ),
-                              const SizedBox(height: 30),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
                         ),
                       ),
                     ),

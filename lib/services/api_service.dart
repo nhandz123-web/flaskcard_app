@@ -352,15 +352,23 @@ class ApiService {
     } catch (e) {
       print('Lỗi đăng xuất: $e');
     } finally {
+      // Xóa token
       await _tokenStore.clear();
-      print('Token và userId đã được xóa');
+      print('Token đã được xóa');
+
+      // Đặt lại trạng thái decks
       deckProvider.setDecks([]);
       _cachedDecks = null;
       _decksEtag = null;
       _lastDecksFetch = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('cached_decks');
+
+      // Đóng WebSocket
       _webSocketChannel?.sink.close();
+      _webSocketChannel = null; // Đặt lại WebSocket để tránh tái sử dụng
+
+      print('Đã đặt lại toàn bộ trạng thái sau khi đăng xuất');
     }
   }
 
@@ -653,6 +661,52 @@ class ApiService {
       return response.data['avatar_url'];
     } catch (e) {
       throw Exception('Lỗi upload ảnh: $e');
+    }
+  }
+
+  // Thêm vào ApiService class
+
+  /// Lấy dự đoán AI cho một thẻ
+  Future<Map<String, dynamic>> getCardAIPrediction(int cardId) async {
+    try {
+      final response = await _dio.get('/cards/$cardId/ai-prediction');
+      return response.data;
+    } catch (e) {
+      print('Lỗi lấy AI prediction: $e');
+      throw Exception('Tải AI prediction thất bại: $e');
+    }
+  }
+
+  /// Lấy dự đoán AI cho toàn bộ deck
+  Future<Map<String, dynamic>> getDeckAIPredictions(int deckId) async {
+    try {
+      final response = await _dio.get('/decks/$deckId/ai-predictions');
+      return response.data;
+    } catch (e) {
+      print('Lỗi lấy deck AI predictions: $e');
+      throw Exception('Tải deck AI predictions thất bại: $e');
+    }
+  }
+
+  /// Đánh dấu review với AI insights
+  Future<Map<String, dynamic>> markCardReviewWithAI(
+      int cardId,
+      int quality,
+      ) async {
+    try {
+      final response = await _dio.post(
+        '/cards/$cardId/review-ai',
+        data: {'quality': quality},
+      );
+
+      // Sync lại review count
+      final deckId = response.data['card']['deck_id'];
+      await _syncReviewCount(deckId);
+
+      return response.data;
+    } catch (e) {
+      print('Lỗi đánh dấu review với AI: $e');
+      throw Exception('Đánh dấu review thất bại: $e');
     }
   }
 }

@@ -180,5 +180,6 @@
   "reviewAgainDays": "Thẻ sẽ được ôn lại sau %d ngày.",
   "tapToRevealFirst": "Hãy lật thẻ để xem đáp án trước",
   "completedToday": "Bạn đã hoàn thành hết thẻ hôm nay",
-  "newCardsAvailable": "New cards available"
+  "newCardsAvailable": "New cards available",
+  "aiInsights": "AI Insights"
 }

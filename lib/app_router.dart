@@ -217,11 +217,13 @@ GoRouter buildRouter(ApiService api, TokenStore tokenStore) {
                     name: 'help',
                     pageBuilder: (_, __) => _transitionPage(const HelpPage()),
                   ),
+
                   GoRoute(
                     path: 'settings',
                     name: 'settings',
                     pageBuilder: (_, __) => _transitionPage(const SettingsPage()),
                   ),
+
                 ],
               ),
             ],

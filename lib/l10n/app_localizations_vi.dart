@@ -418,4 +418,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get newCardsAvailable => 'New cards available';
+
+  @override
+  String get aiInsights => 'AI Insights';
 }
